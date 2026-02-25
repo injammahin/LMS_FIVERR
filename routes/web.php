@@ -44,4 +44,29 @@ Route::middleware(['auth', 'admin'])
 
 
 });
+
+
+
+
+
+Route::middleware(['auth', 'role:student'])
+    ->prefix('student')
+    ->name('student.')
+    ->group(function () {
+        Route::view('/dashboard', 'student.dashboard')->name('dashboard');
+    });
+
+Route::middleware(['auth', 'role:teacher'])
+    ->prefix('teacher')
+    ->name('teacher.')
+    ->group(function () {
+        Route::view('/dashboard', 'teacher.dashboard')->name('dashboard');
+    });
+
+Route::middleware(['auth', 'role:staff'])
+    ->prefix('staff')
+    ->name('staff.')
+    ->group(function () {
+        Route::view('/dashboard', 'staff.dashboard')->name('dashboard');
+    });
 require __DIR__.'/auth.php';
