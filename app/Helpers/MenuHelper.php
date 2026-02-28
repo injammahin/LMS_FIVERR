@@ -13,12 +13,22 @@ class MenuHelper
                 'name' => 'Dashboard',
                 'path' => '/admin/dashboard',  // Added 'admin/' prefix
             ],
+            // [
+            //     'icon' => 'courses',
+            //     'name' => 'Courses',
+            //     'subItems' => [
+            //         ['name' => 'All Courses', 'path' => '/admin/courses'],  // Added 'admin/' prefix
+            //         ['name' => 'Add New Course', 'path' => '/admin/courses/create'],  // Added 'admin/' prefix
+            //     ],
+            // ],
             [
                 'icon' => 'courses',
-                'name' => 'Courses',
+                'name' => 'Course Config',
                 'subItems' => [
-                    ['name' => 'All Courses', 'path' => '/admin/courses'],  // Added 'admin/' prefix
-                    ['name' => 'Add New Course', 'path' => '/admin/courses/create'],  // Added 'admin/' prefix
+                    ['name' => 'Divisions', 'path' => '/admin/divisions'], // Added 'admin/' prefix
+                    ['name' => 'Subjects', 'path' => '/admin/subjects'],
+                    ['name' => 'Courses', 'path' => '/admin/courses'],
+
                 ],
             ],
             [
@@ -46,6 +56,8 @@ class MenuHelper
                     ['name' => 'All Teachers', 'path' => '/admin/teachers'],  // Added 'admin/' prefix
                     ['name' => 'Add New Teacher', 'path' => '/admin/teachers/create'],  // Added 'admin/' prefix
                     ['name' => 'Teacher Reports', 'path' => '/admin/teachers/reports'],  // Added 'admin/' prefix
+                    ['name' => 'Assign Courses', 'path' => '/admin/teachers'], 
+
                 ],
             ],
             [

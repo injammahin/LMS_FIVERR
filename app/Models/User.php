@@ -48,4 +48,13 @@ class User extends Authenticatable
     {
         return $this->role === 'admin';
     }
+    public function coursesTeaching()
+    {
+        return $this->belongsToMany(\App\Models\Course::class, 'course_teacher', 'teacher_id', 'course_id')
+            ->withTimestamps();
+    }
+    public function division()
+    {
+        return $this->belongsTo(\App\Models\Division::class);
+    }
 }
