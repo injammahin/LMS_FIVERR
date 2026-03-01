@@ -1,197 +1,147 @@
-@extends('layouts.admin')
+@extends('layouts.teacher')
 
-@section('title', 'Admin Dashboard')
+@section('title', 'Teacher Dashboard')
 
-@section('content')
+@section('teacher_content')
+<div class="space-y-6">
 
-    <div class="space-y-8">
-
-        {{-- PAGE HEADER --}}
+    {{-- Header --}}
+    <div class="flex items-start justify-between gap-4">
         <div>
-            <h1 class="text-md font-bold text-slate-800 dark:text-white">LMS Dashboard</h1>
-            <p class="text-sm text-slate-500 dark:text-slate-400">
-                Overview of your learning management system
-            </p>
+            <h1 class="text-2xl font-semibold text-gray-900">Dashboard</h1>
+            <p class="text-sm text-gray-500 mt-1">Welcome back, {{ auth()->user()->name }} 👋</p>
         </div>
 
-        {{-- KPI CARDS --}}
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="flex gap-2">
+            <a href="#"
+               class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50">
+                <i class="fa-regular fa-calendar"></i> Today
+            </a>
+            <a href="#"
+               class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700">
+                <i class="fa-solid fa-plus"></i> Create
+            </a>
+        </div>
+    </div>
 
-            {{-- Total Students --}}
-            <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm">
-                <p class="text-sm text-slate-500">Total Students</p>
-                <h2 class="text-3xl font-bold text-blue-600 mt-2">1,245</h2>
-                <p class="text-xs text-green-500 mt-2">+12% this month</p>
-            </div>
-
-            {{-- Total Teachers --}}
-            <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm">
-                <p class="text-sm text-slate-500">Total Teachers</p>
-                <h2 class="text-3xl font-bold text-purple-600 mt-2">58</h2>
-                <p class="text-xs text-green-500 mt-2">+4 new teachers</p>
-            </div>
-
-            {{-- Active Courses --}}
-            <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm">
-                <p class="text-sm text-slate-500">Active Courses</p>
-                <h2 class="text-3xl font-bold text-orange-500 mt-2">96</h2>
-                <p class="text-xs text-slate-400 mt-2">Across 6 Grades</p>
-            </div>
-
-            {{-- Pending Assignments --}}
-            <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm">
-                <p class="text-sm text-slate-500">Pending Submissions</p>
-                <h2 class="text-3xl font-bold text-red-500 mt-2">214</h2>
-                <p class="text-xs text-red-400 mt-2">Needs review</p>
-            </div>
-
+    {{-- Stats --}}
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div class="text-sm text-gray-500">My Courses</div>
+            <div class="text-3xl font-bold text-gray-900 mt-2">6</div>
+            <div class="text-xs text-gray-500 mt-2">Assigned to you</div>
         </div>
 
-
-        {{-- CHART SECTION --}}
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-            {{-- STUDENT GROWTH (Line Chart) --}}
-            <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm lg:col-span-2">
-                <h3 class="font-semibold text-slate-700 dark:text-white mb-4">
-                    Student Growth
-                </h3>
-                <canvas id="studentGrowthChart" height="100"></canvas>
-            </div>
-
-            {{-- COURSE DISTRIBUTION (Donut Chart) --}}
-            <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm">
-                <h3 class="font-semibold text-slate-700 dark:text-white mb-4">
-                    Courses by Grade
-                </h3>
-                <canvas id="courseDistributionChart"></canvas>
-            </div>
-
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div class="text-sm text-gray-500">Students</div>
+            <div class="text-3xl font-bold text-gray-900 mt-2">128</div>
+            <div class="text-xs text-gray-500 mt-2">Enrolled in your courses</div>
         </div>
 
-
-        {{-- SECOND ROW CHART --}}
-        <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm">
-            <h3 class="font-semibold text-slate-700 dark:text-white mb-4">
-                Assignment Submissions (Monthly)
-            </h3>
-            <canvas id="assignmentBarChart" height="90"></canvas>
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div class="text-sm text-gray-500">Pending Grading</div>
+            <div class="text-3xl font-bold text-gray-900 mt-2">14</div>
+            <div class="text-xs text-amber-700 mt-2">Needs review</div>
         </div>
 
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div class="text-sm text-gray-500">Announcements</div>
+            <div class="text-3xl font-bold text-gray-900 mt-2">3</div>
+            <div class="text-xs text-gray-500 mt-2">Published</div>
+        </div>
+    </div>
 
-        {{-- RECENT ACTIVITY TABLE --}}
-        <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm">
-            <h3 class="font-semibold text-slate-700 dark:text-white mb-4">
-                Recent Activity
-            </h3>
+    {{-- Two columns --}}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-            <div class="overflow-x-auto">
-                <table class="min-w-full text-sm">
-                    <thead>
-                        <tr class="text-left text-slate-500 border-b border-slate-200 dark:border-slate-700">
-                            <th class="py-3">User</th>
-                            <th>Action</th>
-                            <th>Date</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody class="text-slate-700 dark:text-slate-300">
+        {{-- Quick actions --}}
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-gray-900">Quick Actions</h2>
+                <span class="text-xs text-gray-500">Shortcuts</span>
+            </div>
 
-                        <tr class="border-b border-slate-100 dark:border-slate-800">
-                            <td class="py-3">John Doe</td>
-                            <td>Submitted Math Assignment</td>
-                            <td>Feb 22, 2026</td>
-                            <td><span class="px-3 py-1 text-xs bg-green-100 text-green-700 rounded-full">Completed</span>
-                            </td>
-                        </tr>
+            <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <a href="#" class="rounded-xl border border-gray-200 p-4 hover:bg-gray-50 transition">
+                    <div class="flex items-center gap-3">
+                        <span class="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 grid place-items-center border border-blue-100">
+                            <i class="fa-solid fa-file-circle-plus"></i>
+                        </span>
+                        <div>
+                            <div class="font-medium text-gray-900">Create Assignment</div>
+                            <div class="text-sm text-gray-500">Add for a course</div>
+                        </div>
+                    </div>
+                </a>
 
-                        <tr class="border-b border-slate-100 dark:border-slate-800">
-                            <td class="py-3">Sarah Lee</td>
-                            <td>Enrolled in Science Course</td>
-                            <td>Feb 21, 2026</td>
-                            <td><span class="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">Active</span></td>
-                        </tr>
+                <a href="#" class="rounded-xl border border-gray-200 p-4 hover:bg-gray-50 transition">
+                    <div class="flex items-center gap-3">
+                        <span class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 grid place-items-center border border-emerald-100">
+                            <i class="fa-solid fa-video"></i>
+                        </span>
+                        <div>
+                            <div class="font-medium text-gray-900">Upload Lesson</div>
+                            <div class="text-sm text-gray-500">Video / notes</div>
+                        </div>
+                    </div>
+                </a>
 
-                        <tr>
-                            <td class="py-3">Mr. Smith</td>
-                            <td>Graded English Assignment</td>
-                            <td>Feb 20, 2026</td>
-                            <td><span class="px-3 py-1 text-xs bg-purple-100 text-purple-700 rounded-full">Reviewed</span>
-                            </td>
-                        </tr>
+                <a href="#" class="rounded-xl border border-gray-200 p-4 hover:bg-gray-50 transition">
+                    <div class="flex items-center gap-3">
+                        <span class="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 grid place-items-center border border-amber-100">
+                            <i class="fa-solid fa-check-double"></i>
+                        </span>
+                        <div>
+                            <div class="font-medium text-gray-900">Grade Submissions</div>
+                            <div class="text-sm text-gray-500">Pending work</div>
+                        </div>
+                    </div>
+                </a>
 
-                    </tbody>
-                </table>
+                <a href="#" class="rounded-xl border border-gray-200 p-4 hover:bg-gray-50 transition">
+                    <div class="flex items-center gap-3">
+                        <span class="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 grid place-items-center border border-purple-100">
+                            <i class="fa-solid fa-bullhorn"></i>
+                        </span>
+                        <div>
+                            <div class="font-medium text-gray-900">Send Notice</div>
+                            <div class="text-sm text-gray-500">Announcement</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        {{-- Recent submissions --}}
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-gray-900">Recent Submissions</h2>
+                <a href="#" class="text-sm font-medium text-blue-700 hover:text-blue-800">View all</a>
+            </div>
+
+            <div class="mt-4 space-y-3">
+                <div class="flex items-center justify-between rounded-xl border border-gray-100 p-4">
+                    <div>
+                        <p class="font-medium text-gray-900">Math Homework #2</p>
+                        <p class="text-sm text-gray-500">Submitted by: Rahim</p>
+                    </div>
+                    <span class="text-xs rounded-full bg-amber-50 px-2 py-1 font-medium text-amber-700 border border-amber-100">
+                        Needs Review
+                    </span>
+                </div>
+
+                <div class="flex items-center justify-between rounded-xl border border-gray-100 p-4">
+                    <div>
+                        <p class="font-medium text-gray-900">Science Quiz</p>
+                        <p class="text-sm text-gray-500">Submitted by: Ayesha</p>
+                    </div>
+                    <span class="text-xs rounded-full bg-emerald-50 px-2 py-1 font-medium text-emerald-700 border border-emerald-100">
+                        Graded
+                    </span>
+                </div>
             </div>
         </div>
 
     </div>
-
-@endsection
-
-
-@section('scripts')
-
-    <script>
-
-        document.addEventListener("DOMContentLoaded", function () {
-
-            // LINE CHART
-            new Chart(document.getElementById('studentGrowthChart'), {
-                type: 'line',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                    datasets: [{
-                        label: 'Students',
-                        data: [200, 400, 650, 800, 1000, 1245],
-                        borderColor: '#3B82F6',
-                        backgroundColor: 'rgba(59,130,246,0.1)',
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { display: false } }
-                }
-            });
-
-            // DONUT CHART
-            new Chart(document.getElementById('courseDistributionChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6'],
-                    datasets: [{
-                        data: [12, 15, 18, 14, 20, 17],
-                        backgroundColor: [
-                            '#3B82F6', '#8B5CF6', '#F59E0B', '#10B981', '#EF4444', '#6366F1'
-                        ]
-                    }]
-                },
-                options: {
-                    plugins: { legend: { position: 'bottom' } }
-                }
-            });
-
-            // BAR CHART
-            new Chart(document.getElementById('assignmentBarChart'), {
-                type: 'bar',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                    datasets: [{
-                        label: 'Submissions',
-                        data: [120, 190, 300, 250, 400, 350],
-                        backgroundColor: '#F97316'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { display: false } }
-                }
-            });
-
-        });
-
-    </script>
-
+</div>
 @endsection

@@ -3,6 +3,31 @@
 @section('title', $subject->name)
 
 @section('content')
+@once
+<style>
+  .donut {
+    width: 64px;
+    height: 64px;
+    border-radius: 9999px;
+    display: grid;
+    place-items: center;
+    position: relative;
+  }
+  .donut::before {
+    content: "";
+    position: absolute;
+    inset: 8px;  /* thickness */
+    background: white;
+    border-radius: 9999px;
+  }
+  .donut > span {
+    position: relative;
+    font-size: 12px;
+    font-weight: 800;
+    color: #111827;
+  }
+</style>
+@endonce
     <div class="min-h-screen bg-gray-50">
 
         {{-- Top banner --}}
@@ -68,9 +93,14 @@
                         $totalQuizzes = $course->quizzes->count();
                         $totalAssignments = $course->assignments->count();
 
-                        // Until progress tracking is built
-                        $completedLessons = 0;
-                        $percent = $totalLessons > 0 ? round(($completedLessons / $totalLessons) * 100) : 0;
+                        $stats = $courseStats[$course->id] ?? [
+                            'lesson_total' => $totalLessons, 'lesson_done' => 0, 'lesson_percent' => 0,
+                            'quiz_total' => $totalQuizzes, 'quiz_done' => 0, 'quiz_percent' => 0,
+                            'assignment_total' => $totalAssignments, 'assignment_done' => 0, 'assignment_percent' => 0,
+                            'overall_total' => ($totalLessons + $totalQuizzes + $totalAssignments),
+                            'overall_done' => 0,
+                            'overall_percent' => 0,
+                        ];
                     @endphp
 
                     <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
@@ -117,10 +147,17 @@
                             </div>
 
                             <div class="flex items-center gap-4">
-                                <div class="hidden sm:block text-right">
-                                    <div class="text-xs text-gray-500">Progress</div>
-                                    <div class="text-sm font-semibold text-gray-800">
-                                        {{ $completedLessons }} / {{ $totalLessons }}
+                                <div class="hidden sm:flex items-center gap-3">
+                                    <div class="donut border border-gray-200"
+                                        style="background: conic-gradient(#10b981 {{ $stats['overall_percent'] }}%, #e5e7eb 0%);">
+                                        <span>{{ $stats['overall_percent'] }}%</span>
+                                    </div>
+
+                                    <div class="text-right">
+                                        <div class="text-xs text-gray-500">Overall</div>
+                                        <div class="text-sm font-semibold text-gray-800">
+                                            {{ $stats['overall_done'] }} / {{ $stats['overall_total'] }}
+                                        </div>
                                     </div>
                                 </div>
 
@@ -134,13 +171,42 @@
                         </button>
 
                         {{-- Progress bar --}}
-                        <div class="px-5 pb-5">
-                            <div class="h-3 rounded-full bg-gray-100 overflow-hidden border border-gray-200">
-                                <div class="h-3 rounded-full bg-emerald-500 transition-all duration-500"
-                                    style="width: {{ $percent }}%"></div>
-                            </div>
-                            <div class="mt-2 text-xs text-gray-500">
-                                {{ $percent }}% complete
+                        <div class="px-5 pb-5 space-y-3">
+                            {{-- Lessons --}}
+                            {{-- <div>
+                                <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
+                                    <span><i class="fa-solid fa-book text-blue-600 mr-1"></i> Lessons</span>
+                                    <span class="font-semibold text-gray-800">{{ $stats['lesson_done'] }} / {{ $stats['lesson_total'] }}</span>
+                                </div>
+                                <div class="h-2 rounded-full bg-gray-100 border border-gray-200 overflow-hidden">
+                                    <div class="h-2 rounded-full" style="width: {{ $stats['lesson_percent'] }}%; background:#2563eb;"></div>
+                                </div>
+                            </div> --}}
+
+                            {{-- Quizzes --}}
+                            {{-- <div>
+                                <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
+                                    <span><i class="fa-solid fa-circle-question text-purple-600 mr-1"></i> Quizzes</span>
+                                    <span class="font-semibold text-gray-800">{{ $stats['quiz_done'] }} / {{ $stats['quiz_total'] }}</span>
+                                </div>
+                                <div class="h-2 rounded-full bg-gray-100 border border-gray-200 overflow-hidden">
+                                    <div class="h-2 rounded-full" style="width: {{ $stats['quiz_percent'] }}%; background:#7c3aed;"></div>
+                                </div>
+                            </div> --}}
+
+                            {{-- Assignments --}}
+                            {{-- <div>
+                                <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
+                                    <span><i class="fa-solid fa-file-pen text-amber-600 mr-1"></i> Assignments</span>
+                                    <span class="font-semibold text-gray-800">{{ $stats['assignment_done'] }} / {{ $stats['assignment_total'] }}</span>
+                                </div>
+                                <div class="h-2 rounded-full bg-gray-100 border border-gray-200 overflow-hidden">
+                                    <div class="h-2 rounded-full" style="width: {{ $stats['assignment_percent'] }}%; background:#d97706;"></div>
+                                </div>
+                            </div> --}}
+
+                            <div class="text-xs text-gray-500 pt-1">
+                                <span class="font-semibold text-gray-800">{{ $stats['overall_percent'] }}%</span> complete overall
                             </div>
                         </div>
 
@@ -166,35 +232,50 @@
                                         </div>
                                     @else
                                         <div class="space-y-3">
-                                            @foreach($course->lessons as $lesson)
-                                                <a href="{{ route('student.lessons.show', [$course->id, $lesson->id]) }}"
-                                                    class="group flex items-center justify-between gap-4 rounded-xl border border-gray-200 hover:border-blue-200 hover:bg-blue-50/30 transition p-4">
-                                                    <div class="flex items-center gap-3">
-                                                        <div
-                                                            class="w-10 h-10 rounded-xl bg-blue-50 grid place-items-center text-blue-700 border border-blue-100">
-                                                            <i class="fa-solid fa-play"></i>
-                                                        </div>
+                                          @foreach($course->lessons as $lesson)
+                                            @php
+                                                $p = $progressMap[$lesson->id] ?? null;
+                                                $isDone = !empty($p?->completed_at);
+                                                $isViewed = !empty($p?->viewed_at);
+                                            @endphp
 
-                                                        <div>
-                                                            <div class="text-xs text-gray-500 uppercase tracking-wide">
-                                                                Lesson • Position {{ $lesson->position ?? '-' }}
-                                                            </div>
-                                                            <div class="font-semibold text-gray-900">
-                                                                {{ $lesson->title }}
-                                                            </div>
-                                                        </div>
+                                            <a href="{{ route('student.lessons.show', [$course->id, $lesson->id]) }}"
+                                                class="group flex items-center justify-between gap-4 rounded-xl border border-gray-200 hover:border-blue-200 hover:bg-blue-50/30 transition p-4">
+
+                                                <div class="flex items-center gap-3">
+                                                    <div class="w-10 h-10 rounded-xl bg-blue-50 grid place-items-center text-blue-700 border border-blue-100">
+                                                        <i class="fa-solid fa-play"></i>
                                                     </div>
 
-                                                    <div class="flex items-center gap-3">
-                                                        <span
-                                                            class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+                                                    <div>
+                                                        <div class="text-xs text-gray-500 uppercase tracking-wide">
+                                                            Lesson • Position {{ $lesson->position ?? '-' }}
+                                                        </div>
+                                                        <div class="font-semibold text-gray-900">
+                                                            {{ $lesson->title }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="flex items-center gap-3">
+                                                    @if($isDone)
+                                                        <span class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 border border-green-200">
+                                                            Done
+                                                        </span>
+                                                    @elseif($isViewed)
+                                                        <span class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700 border border-blue-200">
+                                                            Viewed
+                                                        </span>
+                                                    @else
+                                                        <span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
                                                             Not started
                                                         </span>
-                                                        <i
-                                                            class="fa-solid fa-chevron-right text-gray-400 group-hover:text-blue-700 transition"></i>
-                                                    </div>
-                                                </a>
-                                            @endforeach
+                                                    @endif
+
+                                                    <i class="fa-solid fa-chevron-right text-gray-400 group-hover:text-blue-700 transition"></i>
+                                                </div>
+                                            </a>
+                                        @endforeach
                                         </div>
                                     @endif
                                 </div>
@@ -218,31 +299,81 @@
                                     @else
                                         <div class="space-y-3">
                                             @foreach($course->quizzes as $quiz)
+                                                @php
+                                                    $sum = $quizAttemptSummary[$quiz->id] ?? null;
+
+                                                    $used = (int)($sum['used'] ?? 0);
+                                                    $max  = (int)($quiz->max_attempts ?? 0); // 0 means unlimited
+
+                                                    $hasInProgress = !empty($sum) && ($sum['status'] ?? null) === 'in_progress';
+                                                    $hasSubmitted  = $used > 0;
+
+                                                    // ✅ Determine pass/fail based on latest submitted attempt score (if exists)
+                                                    $lastAttempt = $sum['last'] ?? null;
+
+                                                    $passMark = (int)($quiz->pass_mark ?? 0);
+                                                    $isPassed = null;
+
+                                                    if ($hasSubmitted && $lastAttempt && $lastAttempt->submitted_at) {
+                                                        // score/total columns: your controller uses score + total
+                                                        $total = (int)($lastAttempt->total ?? $lastAttempt->total_marks ?? 0);
+                                                        $score = (int)($lastAttempt->score ?? 0);
+
+                                                        if ($total > 0) {
+                                                            $percent = round(($score / $total) * 100);
+                                                            $isPassed = $percent >= $passMark;
+                                                        }
+                                                    }
+
+                                                    // Badge text + class
+                                                    if ($hasInProgress) {
+                                                        $badgeText = 'In progress';
+                                                        $badgeClass = 'bg-blue-100 text-blue-700 border-blue-200';
+                                                    } elseif ($hasSubmitted) {
+                                                        if ($isPassed === true) {
+                                                            $badgeText = 'Passed';
+                                                            $badgeClass = 'bg-green-100 text-green-700 border-green-200';
+                                                        } elseif ($isPassed === false) {
+                                                            $badgeText = 'Failed';
+                                                            $badgeClass = 'bg-red-100 text-red-700 border-red-200';
+                                                        } else {
+                                                            $badgeText = 'Submitted';
+                                                            $badgeClass = 'bg-purple-100 text-purple-700 border-purple-200';
+                                                        }
+                                                    } else {
+                                                        $badgeText = 'Not started';
+                                                        $badgeClass = 'bg-gray-100 text-gray-600 border-gray-200';
+                                                    }
+
+                                                    // Attempts label
+                                                    $attemptText = $max > 0 ? "{$used}/{$max}" : "{$used}/∞";
+                                                @endphp
+
                                                 <a href="{{ route('student.quizzes.show', [$course->id, $quiz->id]) }}"
                                                     class="group flex items-center justify-between gap-4 rounded-xl border border-gray-200 hover:border-purple-200 hover:bg-purple-50/30 transition p-4">
+
                                                     <div class="flex items-center gap-3">
-                                                        <div
-                                                            class="w-10 h-10 rounded-xl bg-purple-50 grid place-items-center text-purple-700 border border-purple-100">
+                                                        <div class="w-10 h-10 rounded-xl bg-purple-50 grid place-items-center text-purple-700 border border-purple-100">
                                                             <i class="fa-solid fa-bolt"></i>
                                                         </div>
 
                                                         <div>
-                                                            <div class="text-xs text-gray-500 uppercase tracking-wide">
-                                                                Quiz
-                                                            </div>
-                                                            <div class="font-semibold text-gray-900">
-                                                                {{ $quiz->title }}
+                                                            <div class="text-xs text-gray-500 uppercase tracking-wide">Quiz</div>
+                                                            <div class="font-semibold text-gray-900">{{ $quiz->title }}</div>
+
+                                                            {{-- Attempts small text --}}
+                                                            <div class="text-xs text-gray-500 mt-1">
+                                                                Attempts: <span class="font-semibold text-gray-800">{{ $attemptText }}</span>
                                                             </div>
                                                         </div>
                                                     </div>
 
                                                     <div class="flex items-center gap-3">
-                                                        <span
-                                                            class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
-                                                            Not started
+                                                        <span class="text-xs px-2 py-1 rounded-full border {{ $badgeClass }}">
+                                                            {{ $badgeText }}
                                                         </span>
-                                                        <i
-                                                            class="fa-solid fa-chevron-right text-gray-400 group-hover:text-purple-700 transition"></i>
+
+                                                        <i class="fa-solid fa-chevron-right text-gray-400 group-hover:text-purple-700 transition"></i>
                                                     </div>
                                                 </a>
                                             @endforeach
@@ -288,12 +419,33 @@
                                                     </div>
 
                                                     <div class="flex items-center gap-3">
-                                                        <span
-                                                            class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
-                                                            Not submitted
+                                                        @php
+                                                            $asum = $assignmentSubmissionSummary[$assignment->id] ?? null;
+
+                                                            $aUsed = (int)($asum['used'] ?? 0);
+                                                            $aMax  = (int)($assignment->max_attempts ?? 0); // 0 = unlimited
+                                                            $aAttemptText = $aMax > 0 ? "{$aUsed}/{$aMax}" : "{$aUsed}/∞";
+
+                                                            $aStatus = $asum['status'] ?? 'not_submitted'; // not_submitted|submitted|graded
+
+                                                            if ($aStatus === 'graded') {
+                                                                $aBadgeText = 'Graded';
+                                                                $aBadgeClass = 'bg-green-100 text-green-700 border-green-200';
+                                                            } elseif ($aStatus === 'submitted') {
+                                                                $aBadgeText = 'Submitted';
+                                                                $aBadgeClass = 'bg-blue-100 text-blue-700 border-blue-200';
+                                                            } else {
+                                                                $aBadgeText = 'Not submitted';
+                                                                $aBadgeClass = 'bg-gray-100 text-gray-600 border-gray-200';
+                                                            }
+                                                        @endphp
+
+                                                        {{-- ✅ Badge --}}
+                                                        <span class="text-xs px-2 py-1 rounded-full border {{ $aBadgeClass }}">
+                                                            {{ $aBadgeText }}
                                                         </span>
-                                                        <i
-                                                            class="fa-solid fa-chevron-right text-gray-400 group-hover:text-amber-700 transition"></i>
+
+                                                        <i class="fa-solid fa-chevron-right text-gray-400 group-hover:text-amber-700 transition"></i>
                                                     </div>
                                                 </a>
                                             @endforeach

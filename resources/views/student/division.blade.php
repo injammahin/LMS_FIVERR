@@ -3,6 +3,57 @@
 @section('title', $division->name)
 
 @section('content')
+    @once
+        <style>
+            .donut {
+                width: 72px;
+                height: 72px;
+                border-radius: 9999px;
+                display: grid;
+                place-items: center;
+                position: relative;
+                background: conic-gradient(#10b981 0%, #e5e7eb 0%);
+            }
+
+            .donut::before {
+                content: "";
+                position: absolute;
+                inset: 10px;
+                background: rgba(255, 255, 255, 0.95);
+                border-radius: 9999px;
+            }
+
+            .donut>span {
+                position: relative;
+                font-size: 12px;
+                font-weight: 800;
+                color: #111827;
+            }
+
+            .tip {
+                position: relative;
+            }
+
+            .tip .tipbox {
+                display: none;
+                position: absolute;
+                z-index: 40;
+                top: 100%;
+                left: 0;
+                margin-top: -210px;
+                width: 320px;
+                background: white;
+                border: 1px solid #e5e7eb;
+                border-radius: 14px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, .12);
+                padding: 12px;
+            }
+
+            .tip:hover .tipbox {
+                display: block;
+            }
+        </style>
+    @endonce
     <div class="min-h-screen bg-gray-50">
         {{-- Top Header --}}
         <div class="bg-gradient-to-r from-blue-700 to-blue-900 text-white">
@@ -44,18 +95,56 @@
                 </div>
 
                 {{-- Small stats bar --}}
-                <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div class="mt-6 grid grid-cols-1 sm:grid-cols-4 gap-3">
+                    {{-- Subjects --}}
                     <div class="rounded-2xl bg-white/10 border border-white/15 px-4 py-3">
                         <p class="text-xs text-white/80">Subjects</p>
                         <p class="text-xl font-semibold">{{ $subjects->count() }}</p>
                     </div>
-                    <div class="rounded-2xl bg-white/10 border border-white/15 px-4 py-3">
-                        <p class="text-xs text-white/80">Lessons Completed</p>
-                        <p class="text-xl font-semibold">—</p>
+
+                    {{-- Lessons donut --}}
+                    <div class="rounded-2xl bg-white/10 border border-white/15 px-4 py-3 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-white/80">Lessons Completed</p>
+                            <p class="text-sm font-semibold">
+                                {{ $divisionStats['lessons_done'] }} of {{ $divisionStats['lessons_total'] }}
+                            </p>
+                        </div>
+
+                        <div class="donut"
+                            style="background: conic-gradient(#3b82f6 {{ $divisionStats['lessons_percent'] }}%, rgba(255,255,255,.25) 0%);">
+                            <span class="text-white">{{ $divisionStats['lessons_percent'] }}%</span>
+                        </div>
                     </div>
-                    <div class="rounded-2xl bg-white/10 border border-white/15 px-4 py-3">
-                        <p class="text-xs text-white/80">Quizzes Completed</p>
-                        <p class="text-xl font-semibold">—</p>
+
+                    {{-- Quizzes donut --}}
+                    <div class="rounded-2xl bg-white/10 border border-white/15 px-4 py-3 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-white/80">Quizzes Completed</p>
+                            <p class="text-sm font-semibold">
+                                {{ $divisionStats['quizzes_done'] }} of {{ $divisionStats['quizzes_total'] }}
+                            </p>
+                        </div>
+
+                        <div class="donut"
+                            style="background: conic-gradient(#a855f7 {{ $divisionStats['quizzes_percent'] }}%, rgba(255,255,255,.25) 0%);">
+                            <span class="text-white">{{ $divisionStats['quizzes_percent'] }}%</span>
+                        </div>
+                    </div>
+
+                    {{-- Assignments donut --}}
+                    <div class="rounded-2xl bg-white/10 border border-white/15 px-4 py-3 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-white/80">Assignments Completed</p>
+                            <p class="text-sm font-semibold">
+                                {{ $divisionStats['assignments_done'] }} of {{ $divisionStats['assignments_total'] }}
+                            </p>
+                        </div>
+
+                        <div class="donut"
+                            style="background: conic-gradient(#f59e0b {{ $divisionStats['assignments_percent'] }}%, rgba(255,255,255,.25) 0%);">
+                            <span class="text-white">{{ $divisionStats['assignments_percent'] }}%</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -85,8 +174,15 @@
             {{-- Subject Grid --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="subjectGrid">
                 @forelse($subjects as $subject)
+                    @php
+                        $s = $subjectStats[$subject->id] ?? ['percent' => 0, 'done' => 0, 'total' => 0];
+                        $tiles = $subjectActivities[$subject->id]['tiles'] ?? [];
+                        $tipItems = $subjectActivities[$subject->id]['tooltip'] ?? [];
+                    @endphp
+
                     <a href="{{ route('student.subjects.show', [$division->id, $subject->id]) }}"
                         class="subject-card group bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition overflow-hidden">
+
                         {{-- Card top --}}
                         <div class="h-24 bg-gradient-to-r from-indigo-500 to-blue-600 relative">
                             <div
@@ -118,9 +214,7 @@
 
                         {{-- Card body --}}
                         <div class="p-5">
-                            <h3 class="text-lg font-semibold text-gray-900 subject-name">
-                                {{ $subject->name }}
-                            </h3>
+                            <h3 class="text-lg font-semibold text-gray-900 subject-name">{{ $subject->name }}</h3>
 
                             <p class="text-sm text-gray-500 mt-1">
                                 Explore courses, lessons, quizzes and assignments.
@@ -142,12 +236,61 @@
                                 </span>
                             </div>
 
-                            {{-- progress bar placeholder --}}
-                            <div class="mt-4">
+                            {{-- ✅ Progress + tiles + tooltip --}}
+                            <div class="mt-4 tip">
                                 <div class="h-2 rounded-full bg-gray-100 overflow-hidden">
-                                    <div class="h-2 rounded-full bg-emerald-500 w-[0%]"></div>
+                                    <div class="h-2 rounded-full bg-emerald-500" style="width: {{ $s['percent'] }}%"></div>
                                 </div>
-                                <p class="text-xs text-gray-400 mt-2">Progress: 0%</p>
+
+                                <p class="text-xs text-gray-500 mt-2">
+                                    Progress: <span class="font-semibold text-gray-800">{{ $s['percent'] }}%</span>
+                                    ({{ $s['done'] }}/{{ $s['total'] }})
+                                </p>
+
+                                <div class="mt-3 flex flex-wrap gap-1.5">
+                                    @forelse($tiles as $t)
+                                        <div
+                                            class="w-4 h-4 rounded-[4px] border {{ $t['done'] ? 'bg-emerald-500 border-emerald-600' : 'bg-gray-100 border-gray-300' }}">
+                                        </div>
+                                    @empty
+                                        <div class="text-xs text-gray-400">No activities yet.</div>
+                                    @endforelse
+                                </div>
+
+                                <div class="tipbox">
+                                    <div class="text-sm font-semibold text-gray-900 mb-2">
+                                        {{ $subject->name }} — Activity Status
+                                    </div>
+
+                                    <div class="space-y-1 text-sm">
+                                        @forelse($tipItems as $it)
+                                            @php
+                                                $typeLabel = $it['type'] === 'lesson' ? 'Lesson' : ($it['type'] === 'quiz' ? 'Quiz' : 'Assignment');
+                                                $statusLabel = $it['done']
+                                                    ? ($it['type'] === 'lesson' ? 'Done' : 'Submitted')
+                                                    : ($it['type'] === 'lesson' ? 'Not done' : 'Not submitted');
+                                            @endphp
+
+                                            <div class="flex items-start justify-between gap-3">
+                                                <div class="text-gray-700">
+                                                    <span class="font-semibold">{{ $typeLabel }}:</span> {{ $it['title'] }}
+                                                </div>
+
+                                                <span
+                                                    class="text-xs px-2 py-1 rounded-full border
+                                                                                                {{ $it['done'] ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-50 text-gray-700 border-gray-200' }}">
+                                                    {{ $statusLabel }}
+                                                </span>
+                                            </div>
+                                        @empty
+                                            <div class="text-gray-500">No activities found.</div>
+                                        @endforelse
+                                    </div>
+
+                                    <div class="mt-3 text-xs text-gray-500">
+                                        Hover cards show up to {{ count($tipItems) }} items.
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </a>

@@ -31,7 +31,18 @@ class QuizAttemptController extends Controller
                 ->whereNotNull('submitted_at')
                 ->count();
 
-            abort_if($used >= (int)$quiz->max_attempts, 403);
+        if (!empty($quiz->max_attempts)) {
+            $used = QuizAttempt::where('quiz_id', $quiz->id)
+                ->where('user_id', $user->id)
+                ->whereNotNull('submitted_at')
+                ->count();
+
+            if ($used >= (int)$quiz->max_attempts) {
+                return redirect()
+                    ->route('student.quizzes.show', [$quiz->course_id, $quiz->id])
+                    ->with('error', 'You have reached the maximum attempts for this quiz.');
+            }
+        }   
         }
 
         // ✅ resume existing in_progress

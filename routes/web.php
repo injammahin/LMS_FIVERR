@@ -19,6 +19,7 @@ use App\Http\Controllers\Student\LessonViewController;
 use App\Http\Controllers\Student\QuizViewController;
 use App\Http\Controllers\Student\AssignmentViewController;
 use App\Http\Controllers\Student\QuizAttemptController;
+use App\Http\Controllers\Student\AssignmentSubmissionController as StudentAssignmentSubmissionController;
 
 
 
@@ -100,6 +101,8 @@ Route::middleware(['auth', 'role:student'])
                    // ✅ Lesson
         Route::get('/courses/{course}/lessons/{lesson}', [LessonViewController::class, 'show'])
             ->name('lessons.show');
+        Route::post('/courses/{course}/lessons/{lesson}/done', [\App\Http\Controllers\Student\LessonViewController::class, 'markDone'])
+        ->name('lessons.done');
 
         // ✅ Quiz
         Route::get('/courses/{course}/quizzes/{quiz}', [QuizViewController::class, 'show'])
@@ -112,14 +115,52 @@ Route::middleware(['auth', 'role:student'])
         Route::get('/attempts/{attempt}', [QuizAttemptController::class, 'show'])->name('quiz.attempt.show');
         Route::post('/attempts/{attempt}/submit', [QuizAttemptController::class, 'submit'])->name('quiz.attempt.submit');
         Route::get('/attempts/{attempt}/result', [QuizAttemptController::class, 'result'])->name('quiz.attempt.result');
-        
+        Route::post('/courses/{course}/assignments/{assignment}/submit', [StudentAssignmentSubmissionController::class, 'store'])
+               ->name('assignments.submit');
     });
+
+use App\Http\Controllers\Teacher\SubmissionController;
 
 Route::middleware(['auth', 'role:teacher'])
     ->prefix('teacher')
     ->name('teacher.')
     ->group(function () {
-        Route::view('/dashboard', 'teacher.dashboard')->name('dashboard');
+
+        Route::get('/dashboard', [\App\Http\Controllers\Teacher\DashboardController::class, 'index'])
+            ->name('dashboard');
+
+        Route::get('/courses', [\App\Http\Controllers\Teacher\CourseController::class, 'index'])
+            ->name('courses.index');
+
+        Route::get('/courses/{course}', [\App\Http\Controllers\Teacher\CourseController::class, 'show'])
+            ->name('courses.show');
+
+        Route::get('/submissions', [SubmissionController::class, 'index'])
+            ->name('submissions.index');
+
+        // ✅ Assignment submission review
+        Route::get('/assignments/{assignment}/submissions/{submission}', [SubmissionController::class, 'showAssignment'])
+            ->name('assignments.submissions.show');
+
+        Route::post('/assignments/{assignment}/submissions/{submission}/grade', [SubmissionController::class, 'gradeAssignment'])
+            ->name('assignments.submissions.grade');
+
+        // ✅ Quiz attempt review
+        Route::get('/quiz-attempts/{attempt}', [SubmissionController::class, 'showAttempt'])
+            ->name('quiz.attempts.show');
+
+        Route::post('/quiz-attempts/{attempt}/grade', [SubmissionController::class, 'gradeAttempt'])
+            ->name('quiz.attempts.grade');
+
+        // ✅ Notifications
+        Route::get('/notifications', [\App\Http\Controllers\Teacher\NotificationController::class, 'index'])
+            ->name('notifications.index');
+
+        Route::post('/notifications/{id}/read', [\App\Http\Controllers\Teacher\NotificationController::class, 'markRead'])
+            ->name('notifications.read');
+
+        Route::post('/notifications/read-all', [\App\Http\Controllers\Teacher\NotificationController::class, 'markAllRead'])
+            ->name('notifications.read_all');
     });
 
 Route::middleware(['auth', 'role:staff'])

@@ -2,22 +2,25 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+/**
+ * @property-read \Illuminate\Notifications\DatabaseNotificationCollection $notifications
+ * @property-read \Illuminate\Notifications\DatabaseNotificationCollection $unreadNotifications
+ */
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
+        'division_id',      // ✅ add this (you use division_id everywhere)
         'name',
         'email',
         'username',
@@ -26,35 +29,37 @@ class User extends Authenticatable
         'role',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
-    public function isAdmin()
+
+    public function isAdmin(): bool
     {
         return $this->role === 'admin';
     }
-    public function coursesTeaching()
+
+    public function coursesTeaching(): BelongsToMany
     {
-        return $this->belongsToMany(\App\Models\Course::class, 'course_teacher', 'teacher_id', 'course_id')
-            ->withTimestamps();
+        return $this->belongsToMany(
+            \App\Models\Course::class,
+            'course_teacher',
+            'teacher_id',
+            'course_id'
+        )->withTimestamps();
     }
-    public function division()
+
+    public function division(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Division::class);
+        return $this->belongsTo(\App\Models\Division::class, 'division_id');
+    }
+
+    public function lessonProgress(): HasMany
+    {
+        return $this->hasMany(\App\Models\LessonProgress::class, 'user_id');
     }
 }
