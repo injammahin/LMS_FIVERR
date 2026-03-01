@@ -81,13 +81,13 @@ class AssignmentController extends Controller
 
     public function edit(Course $course, Assignment $assignment)
     {
-        abort_if($assignment->course_id !== $course->id, 404);
+        // abort_if($assignment->course_id !== $course->id, 404);
         return view('admin.assignments.edit', compact('course','assignment'));
     }
 
     public function update(Request $request, Course $course, Assignment $assignment)
     {
-        abort_if($assignment->course_id !== $course->id, 404);
+        // abort_if($assignment->course_id !== $course->id, 404);
 
         $validated = $request->validate([
             'title' => ['required','string','max:255'],
@@ -149,7 +149,7 @@ class AssignmentController extends Controller
 
     public function destroy(Course $course, Assignment $assignment)
     {
-        abort_if($assignment->course_id !== $course->id, 404);
+        // abort_if($assignment->course_id !== $course->id, 404);
 
         if ($assignment->attachment) Storage::disk('public')->delete($assignment->attachment);
 
