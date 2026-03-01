@@ -33,8 +33,13 @@ class LessonController extends Controller
             'blocks.*.type' => ['required_with:blocks', 'in:text,video,file'],
             'blocks.*.text' => ['nullable', 'string'],
             'blocks.*.video_url' => ['nullable', 'string', 'max:500'],
-            'blocks.*.file' => ['nullable', 'file', 'max:10240', 'mimes:pdf,doc,docx,ppt,pptx,xls,xlsx,jpg,jpeg,png,webp,zip'],
-        ]);
+            'blocks.*.file' => [
+                'nullable',
+                'file',
+                'max:51200', // 50MB (increase for video)
+                'mimes:pdf,doc,docx,ppt,pptx,xls,xlsx,jpg,jpeg,png,webp,zip,mp3,mp4'
+            ], 
+         ]);
 
         $blocks = $this->normalizeBlocks($request);
 
@@ -70,7 +75,12 @@ class LessonController extends Controller
             'blocks.*.type' => ['required_with:blocks', 'in:text,video,file'],
             'blocks.*.text' => ['nullable', 'string'],
             'blocks.*.video_url' => ['nullable', 'string', 'max:500'],
-            'blocks.*.file' => ['nullable', 'file', 'max:10240', 'mimes:pdf,doc,docx,ppt,pptx,xls,xlsx,jpg,jpeg,png,webp,zip'],
+            'blocks.*.file' => [
+                'nullable',
+                'file',
+                'max:51200', // 50MB (increase for video)
+                'mimes:pdf,doc,docx,ppt,pptx,xls,xlsx,jpg,jpeg,png,webp,zip,mp3,mp4'
+            ],            
             'blocks.*.existing_path' => ['nullable', 'string'],
             'blocks.*.remove_file' => ['nullable', 'boolean'],
         ]);
