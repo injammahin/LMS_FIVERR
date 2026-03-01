@@ -53,9 +53,8 @@ Route::middleware(['auth', 'admin'])
     ->name('admin.')
     ->group(function () {
 
-        Route::get('/dashboard', function () {
-            return view('admin.dashboard');
-        })->name('dashboard');
+        Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])
+           ->name('dashboard');
 
         Route::view('/courses', 'admin.courses.index')->name('courses.index');
         Route::view('/courses/create', 'admin.courses.create')->name('courses.create');
