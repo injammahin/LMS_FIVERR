@@ -8,6 +8,8 @@ use App\Models\Assignment;
 use App\Models\AssignmentSubmission;
 use App\Models\QuizAttempt;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
+use App\Notifications\QuizAttemptGraded;
 
 class SubmissionController extends Controller
 {
@@ -21,20 +23,22 @@ class SubmissionController extends Controller
         $assignmentSubs = null;
         $quizAttempts = null;
 
+        // Assignments
         if ($filter === 'all' || $filter === 'assignment') {
             $assignmentSubs = AssignmentSubmission::query()
                 ->with(['user', 'assignment.course'])
-                ->whereHas('assignment.course', fn($q) => $q->whereIn('id', $courseIds))
+                ->whereHas('assignment.course', fn ($q) => $q->whereIn('id', $courseIds))
                 ->latest()
                 ->paginate(15, ['*'], 'assignments_page')
                 ->appends($request->query());
         }
 
+        // Quizzes (show submitted + reviewed; graded attempts can be shown too if you want)
         if ($filter === 'all' || $filter === 'quiz') {
             $quizAttempts = QuizAttempt::query()
                 ->with(['user', 'quiz.course'])
-                ->whereHas('quiz.course', fn($q) => $q->whereIn('id', $courseIds))
-                ->where('status', 'submitted')
+                ->whereHas('quiz.course', fn ($q) => $q->whereIn('id', $courseIds))
+                ->whereIn('status', ['submitted', 'reviewed']) // ✅ inbox for pending review
                 ->latest()
                 ->paginate(15, ['*'], 'quizzes_page')
                 ->appends($request->query());
@@ -91,7 +95,7 @@ class SubmissionController extends Controller
             if (!isset($validated['is_passed'])) {
                 return back()->withErrors(['is_passed' => 'Pass/Fail required.'])->withInput();
             }
-            $submission->is_passed = (bool)$validated['is_passed'];
+            $submission->is_passed = (bool) $validated['is_passed'];
             $submission->marks_awarded = null;
         }
 
@@ -109,9 +113,20 @@ class SubmissionController extends Controller
         /** @var \App\Models\User $teacher */
         $teacher = auth()->user();
 
-        $attempt->load(['user', 'quiz.course', 'answers.question']);
+        $attempt->load(['user', 'quiz.course', 'answers.question.options']);
 
         abort_if(!$teacher->coursesTeaching()->where('courses.id', $attempt->quiz->course_id)->exists(), 403);
+
+        // ✅ If teacher opens attempt and it was submitted => mark reviewed
+        if (Schema::hasColumn('quiz_attempts', 'status') && ($attempt->status ?? '') === 'submitted') {
+            $attempt->status = 'reviewed';
+
+            if (Schema::hasColumn('quiz_attempts', 'reviewed_at') && empty($attempt->reviewed_at)) {
+                $attempt->reviewed_at = now();
+            }
+
+            $attempt->save();
+        }
 
         $sidebarCounts = $this->sidebarCounts();
         $unread = $sidebarCounts['unread'];
@@ -125,7 +140,7 @@ class SubmissionController extends Controller
         /** @var \App\Models\User $teacher */
         $teacher = auth()->user();
 
-        $attempt->load(['quiz.course', 'answers.question']);
+        $attempt->load(['user', 'quiz.course', 'answers.question']);
 
         abort_if(!$teacher->coursesTeaching()->where('courses.id', $attempt->quiz->course_id)->exists(), 403);
 
@@ -139,10 +154,10 @@ class SubmissionController extends Controller
 
         foreach ($attempt->answers as $ans) {
             $q = $ans->question;
-            $qMarks = (int)($q->marks ?? 0);
+            $qMarks = (int) ($q->marks ?? 0);
             $totalMarks += $qMarks;
 
-            $award = (int)($validated['awards'][$ans->id] ?? 0);
+            $award = (int) ($validated['awards'][$ans->id] ?? 0);
             if ($award > $qMarks) $award = $qMarks;
 
             $ans->awarded_marks = $award;
@@ -151,12 +166,34 @@ class SubmissionController extends Controller
             $score += $award;
         }
 
-        // Your table has total_marks, so use it:
+        // ✅ Save attempt score + total
         $attempt->score = $score;
-        $attempt->total_marks = $totalMarks;
-        $attempt->status = 'graded';
+
+        // Your DB has `total` (NOT total_marks)
+        if (Schema::hasColumn('quiz_attempts', 'total')) {
+            $attempt->total = $totalMarks;
+        }
+
+        // ✅ Status flow: reviewed/submitted -> graded
+        if (Schema::hasColumn('quiz_attempts', 'status')) {
+            $attempt->status = 'graded';
+        }
+
+        if (Schema::hasColumn('quiz_attempts', 'graded_at')) {
+            $attempt->graded_at = now();
+        }
+
+        if (Schema::hasColumn('quiz_attempts', 'reviewed_at') && empty($attempt->reviewed_at)) {
+            $attempt->reviewed_at = now();
+        }
+
         $attempt->save();
 
-        return back()->with('success', 'Quiz attempt graded.');
+        // ✅ Notify student (database notification)
+        if (Schema::hasTable('notifications') && $attempt->user) {
+            $attempt->user->notify(new QuizAttemptGraded($attempt));
+        }
+
+        return back()->with('success', 'Quiz attempt graded ✅ Student notified.');
     }
 }

@@ -148,34 +148,71 @@
 @endsection
 
 @section('scripts')
-    {{-- Quill (Free) --}}
     <link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
 
+    {{-- Better CDN for this module --}}
+    <script src="https://unpkg.com/quill-image-resize-module@3.0.0/image-resize.min.js"></script>
+
+    <style>
+        #quillEditor .ql-editor img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+    </style>
+
     <script>
-        const toolbarOptions = [
-            [{ 'header': [1, 2, 3, 4, 5, false] }],
-            ['bold', 'italic', 'underline', 'strike'],
-            [{ 'color': [] }, { 'background': [] }],
-            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-            [{ 'align': [] }],
-            ['blockquote', 'code-block'],
-            ['link', 'image', 'video'],
-            ['clean']
-        ];
+        // ✅ Register ONLY ONCE + handle default export
+        (function () {
+            const mod =
+                (window.ImageResize && (window.ImageResize.default || window.ImageResize)) ||
+                (window.QuillImageResizeModule && (window.QuillImageResizeModule.default || window.QuillImageResizeModule));
 
-        const quill = new Quill('#quillEditor', {
-            theme: 'snow',
-            modules: { toolbar: toolbarOptions }
-        });
+            if (!mod) {
+                console.error('Image resize module not found. Check CDN loaded.');
+                return;
+            }
 
-        // Load old value
-        const oldHtml = @json(old('description', ''));
-        if (oldHtml) quill.root.innerHTML = oldHtml;
+            // Guard: don't re-register if already present
+            try {
+                Quill.import('modules/imageResize');
+            } catch (e) {
+                Quill.register('modules/imageResize', mod);
+            }
 
-        // On submit, copy HTML to hidden input
-        document.getElementById('lessonForm').addEventListener('submit', function () {
-            document.getElementById('descriptionInput').value = quill.root.innerHTML;
-        });
+            const toolbarOptions = [
+                [{ header: [1, 2, 3, 4, 5, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ color: [] }, { background: [] }],
+                [{ list: 'ordered' }, { list: 'bullet' }],
+                [{ align: [] }],
+                ['blockquote', 'code-block'],
+                ['link', 'image', 'video'],
+                ['clean']
+            ];
+
+            const quill = new Quill('#quillEditor', {
+                theme: 'snow',
+                modules: {
+                    toolbar: toolbarOptions,
+                    imageResize: {
+                        modules: ['Resize', 'DisplaySize', 'Toolbar']
+                    }
+                }
+            });
+
+            // Load initial HTML
+            const initialHtml = @json(old('description', $lesson->description ?? ''));
+            if (initialHtml) quill.root.innerHTML = initialHtml;
+
+            // Save HTML on submit
+            document.getElementById('lessonForm').addEventListener('submit', function () {
+                document.getElementById('descriptionInput').value = quill.root.innerHTML;
+            });
+
+            // Quick debug
+            console.log('Quill + imageResize loaded ✅');
+        })();
     </script>
 @endsection

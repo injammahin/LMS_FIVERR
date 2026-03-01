@@ -24,7 +24,7 @@
         </div>
 
         <!-- Main Content -->
-        <div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg">
+        <div class="w-full">
             @yield('content') <!-- This is where child view content will go -->
         </div>
     </div>

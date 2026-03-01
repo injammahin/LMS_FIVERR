@@ -5,6 +5,7 @@
 @section('content')
     @once
         <style>
+            [x-cloak]{display:none!important;}
             .donut {
                 width: 72px;
                 height: 72px;
@@ -34,19 +35,19 @@
                 position: relative;
             }
 
-            .tip .tipbox {
-                display: none;
+            .tip .tipbox{
                 position: absolute;
                 z-index: 40;
-                top: 100%;
                 left: 0;
-                margin-top: -210px;
+                top: 40px;
+                transform: translateY(-110%);
                 width: 320px;
                 background: white;
                 border: 1px solid #e5e7eb;
                 border-radius: 14px;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, .12);
+                box-shadow: 0 10px 30px rgba(0,0,0,.12);
                 padding: 12px;
+                pointer-events: none; /* so hover stays on the tile */
             }
 
             .tip:hover .tipbox {
@@ -237,61 +238,75 @@
                             </div>
 
                             {{-- ✅ Progress + tiles + tooltip --}}
-                            <div class="mt-4 tip">
-                                <div class="h-2 rounded-full bg-gray-100 overflow-hidden">
-                                    <div class="h-2 rounded-full bg-emerald-500" style="width: {{ $s['percent'] }}%"></div>
-                                </div>
+                           @php
+                                // Build JS-friendly tooltip items (labels + badge classes)
+                                $tipItemsJs = collect($tipItems)->map(function ($it) {
+                                    $typeLabel = $it['type'] === 'lesson' ? 'Lesson' : ($it['type'] === 'quiz' ? 'Quiz' : 'Assignment');
 
-                                <p class="text-xs text-gray-500 mt-2">
-                                    Progress: <span class="font-semibold text-gray-800">{{ $s['percent'] }}%</span>
-                                    ({{ $s['done'] }}/{{ $s['total'] }})
-                                </p>
+                                    $statusLabel = $it['done']
+                                        ? ($it['type'] === 'lesson' ? 'Done' : 'Submitted')
+                                        : ($it['type'] === 'lesson' ? 'Not done' : 'Not submitted');
 
-                                <div class="mt-3 flex flex-wrap gap-1.5">
-                                    @forelse($tiles as $t)
-                                        <div
-                                            class="w-4 h-4 rounded-[4px] border {{ $t['done'] ? 'bg-emerald-500 border-emerald-600' : 'bg-gray-100 border-gray-300' }}">
-                                        </div>
-                                    @empty
-                                        <div class="text-xs text-gray-400">No activities yet.</div>
-                                    @endforelse
-                                </div>
+                                    $badgeClass = $it['done']
+                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                        : 'bg-gray-50 text-gray-700 border-gray-200';
 
-                                <div class="tipbox">
-                                    <div class="text-sm font-semibold text-gray-900 mb-2">
-                                        {{ $subject->name }} — Activity Status
-                                    </div>
+                                    return [
+                                        'title' => $it['title'] ?? '',
+                                        'typeLabel' => $typeLabel,
+                                        'statusLabel' => $statusLabel,
+                                        'badgeClass' => $badgeClass,
+                                    ];
+                                })->values();
+                            @endphp
 
-                                    <div class="space-y-1 text-sm">
-                                        @forelse($tipItems as $it)
-                                            @php
-                                                $typeLabel = $it['type'] === 'lesson' ? 'Lesson' : ($it['type'] === 'quiz' ? 'Quiz' : 'Assignment');
-                                                $statusLabel = $it['done']
-                                                    ? ($it['type'] === 'lesson' ? 'Done' : 'Submitted')
-                                                    : ($it['type'] === 'lesson' ? 'Not done' : 'Not submitted');
-                                            @endphp
+<div class="mt-4 tip"
+     x-data="{ items: @js($tipItemsJs), active: null }">
 
-                                            <div class="flex items-start justify-between gap-3">
-                                                <div class="text-gray-700">
-                                                    <span class="font-semibold">{{ $typeLabel }}:</span> {{ $it['title'] }}
-                                                </div>
+    {{-- Progress bar --}}
+    <div class="h-2 rounded-full bg-gray-100 overflow-hidden">
+        <div class="h-2 rounded-full bg-emerald-500" style="width: {{ $s['percent'] }}%"></div>
+    </div>
 
-                                                <span
-                                                    class="text-xs px-2 py-1 rounded-full border
-                                                                                                {{ $it['done'] ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-50 text-gray-700 border-gray-200' }}">
-                                                    {{ $statusLabel }}
-                                                </span>
-                                            </div>
-                                        @empty
-                                            <div class="text-gray-500">No activities found.</div>
-                                        @endforelse
-                                    </div>
+    <p class="text-xs text-gray-500 mt-2">
+        Progress: <span class="font-semibold text-gray-800">{{ $s['percent'] }}%</span>
+        ({{ $s['done'] }}/{{ $s['total'] }})
+    </p>
 
-                                    <div class="mt-3 text-xs text-gray-500">
-                                        Hover cards show up to {{ count($tipItems) }} items.
-                                    </div>
-                                </div>
-                            </div>
+    {{-- Tiles --}}
+    <div class="mt-3 flex flex-wrap gap-1.5">
+        @forelse($tiles as $t)
+            <button
+                type="button"
+                class="w-4 h-4 rounded-[4px] border
+                    {{ $t['done'] ? 'bg-emerald-500 border-emerald-600' : 'bg-gray-100 border-gray-300' }}"
+                @mouseenter="active={{ $loop->index }}"
+                @mouseleave="active=null"
+                aria-label="Activity {{ $loop->iteration }}"
+            ></button>
+        @empty
+            <div class="text-xs text-gray-400">No activities yet.</div>
+        @endforelse
+    </div>
+
+    {{-- ✅ Single-item tooltip (only the hovered tile) --}}
+    <div class="tipbox" x-show="active !== null && items[active]" x-cloak>
+        <div class="text-sm font-semibold text-gray-900 mb-2">
+            {{ $subject->name }} — Activity Status
+        </div>
+
+        <div class="flex items-start justify-between gap-3 text-sm">
+            <div class="text-gray-700 pr-2">
+                <span class="font-semibold" x-text="items[active].typeLabel + ':'"></span>
+                <span x-text="items[active].title"></span>
+            </div>
+
+            <span class="text-xs px-2 py-1 rounded-full border whitespace-nowrap"
+                  :class="items[active].badgeClass"
+                  x-text="items[active].statusLabel"></span>
+        </div>
+    </div>
+</div>
                         </div>
                     </a>
                 @empty

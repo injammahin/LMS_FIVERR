@@ -1,21 +1,18 @@
-{{-- resources/views/admin/quiz_questions/create.blade.php --}}
 @extends('layouts.admin')
 
-@section('title', 'Add Question')
+@section('title', 'Edit Question')
 
 @section('content')
 @php
     use Illuminate\Support\Facades\Route;
-
-    // ✅ Prevent Blade crash if the upload route is not created yet
     $quillUploadUrl = Route::has('admin.quill.upload') ? route('admin.quill.upload') : null;
 @endphp
 
-<div class="max-w-4xl mx-auto space-y-6" x-data="{ type: @js(old('type', 'text')) }">
+<div class="max-w-4xl mx-auto space-y-6" x-data="{ type: @js(old('type', $question->type)) }">
 
-    <div class="flex items-start justify-between">
+    <div class="flex items-start justify-between gap-4">
         <div>
-            <h1 class="text-lg font-semibold text-gray-800 dark:text-white">Add Question</h1>
+            <h1 class="text-lg font-semibold text-gray-800 dark:text-white">Edit Question</h1>
             <p class="text-sm text-gray-500 dark:text-white/60">
                 Quiz: <span class="font-medium">{{ $quiz->title }}</span>
             </p>
@@ -40,10 +37,11 @@
     <div class="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-white/10 p-6">
         <form id="questionForm"
               method="POST"
-              action="{{ route('admin.quizzes.questions.store', $quiz->id) }}"
+              action="{{ route('admin.quizzes.questions.update', [$quiz->id, $question->id]) }}"
               enctype="multipart/form-data"
               class="space-y-5">
             @csrf
+            @method('PUT')
 
             {{-- Type --}}
             <div>
@@ -62,9 +60,8 @@
             {{-- Question (Quill) --}}
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-white/80 mb-1">Question</label>
-
-                {{-- hidden field (HTML saved here) --}}
-                <input type="hidden" name="question" id="questionInput" value="{{ old('question') }}">
+                <input type="hidden" name="question" id="questionInput"
+                       value="{{ old('question', $question->question) }}">
 
                 <div class="quillWrap border border-gray-300 dark:border-white/10 rounded-lg overflow-hidden bg-white dark:bg-slate-950">
                     <div id="questionEditor" class="dark:text-white"></div>
@@ -73,10 +70,34 @@
                 @error('question') <p class="text-red-500 text-sm mt-1">{{ $message }}</p> @enderror
             </div>
 
-            {{-- Question Image --}}
+            {{-- Existing image --}}
+            @if($question->question_image)
+                <div class="rounded-lg border border-gray-200 dark:border-white/10 p-4 bg-gray-50 dark:bg-white/5">
+                    <div class="flex items-start gap-4">
+                        <img src="{{ asset('storage/'.$question->question_image) }}"
+                             class="w-28 h-20 rounded-lg border border-gray-200 dark:border-white/10 object-cover"
+                             alt="Question image">
+
+                        <div class="space-y-2">
+                            <div class="text-sm font-medium text-gray-800 dark:text-white">Current image</div>
+
+                            <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-white/80">
+                                <input type="checkbox" name="remove_image" value="1" class="rounded">
+                                Remove image
+                            </label>
+
+                            <p class="text-xs text-gray-500 dark:text-white/60">
+                                If you upload a new image below, the old one will be replaced automatically.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            {{-- Upload new question image --}}
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-white/80 mb-1">
-                    Question Image (optional)
+                    Upload New Question Image (optional)
                 </label>
                 <input type="file" name="question_image"
                        accept="image/png,image/jpeg,image/webp"
@@ -88,21 +109,23 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-white/80 mb-1">Marks</label>
-                    <input type="number" name="marks" min="1" value="{{ old('marks', 1) }}"
+                    <input type="number" name="marks" min="1"
+                           value="{{ old('marks', $question->marks) }}"
                            class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-white/10 rounded-lg bg-white dark:bg-slate-950 dark:text-white">
                     @error('marks') <p class="text-red-500 text-sm mt-1">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-white/80 mb-1">Position</label>
-                    <input type="number" name="position" min="1" value="{{ old('position', 1) }}"
+                    <input type="number" name="position" min="1"
+                           value="{{ old('position', $question->position) }}"
                            class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-white/10 rounded-lg bg-white dark:bg-slate-950 dark:text-white">
                     @error('position') <p class="text-red-500 text-sm mt-1">{{ $message }}</p> @enderror
                 </div>
 
                 <div class="flex items-center gap-2 pt-6">
                     <input type="checkbox" name="is_required" value="1" class="rounded"
-                           {{ old('is_required', 1) ? 'checked' : '' }}>
+                           {{ old('is_required', $question->is_required) ? 'checked' : '' }}>
                     <label class="text-sm text-gray-700 dark:text-white/80">Required</label>
                 </div>
             </div>
@@ -112,29 +135,14 @@
                 <label class="block text-sm font-medium text-gray-700 dark:text-white/80 mb-1">
                     Explanation (optional)
                 </label>
-
-                <input type="hidden" name="explanation" id="explanationInput" value="{{ old('explanation') }}">
+                <input type="hidden" name="explanation" id="explanationInput"
+                       value="{{ old('explanation', $question->explanation) }}">
 
                 <div class="quillWrap border border-gray-300 dark:border-white/10 rounded-lg overflow-hidden bg-white dark:bg-slate-950">
                     <div id="explanationEditor" class="dark:text-white"></div>
                 </div>
 
                 @error('explanation') <p class="text-red-500 text-sm mt-1">{{ $message }}</p> @enderror
-            </div>
-
-            {{-- Note --}}
-            <div class="text-sm text-gray-500 dark:text-white/60">
-                <p>
-                    For <b>single_choice</b>, <b>multiple_choice</b>, and <b>true_false</b>, after creating the question,
-                    go to <b>Options</b> and set correct answers.
-                </p>
-
-                @if(!$quillUploadUrl)
-                    <p class="mt-2 text-amber-600">
-                        ⚠️ Image upload for the editor is not enabled yet (route <b>admin.quill.upload</b> missing).
-                        Pasting images may create huge Base64 HTML and trigger the 50k characters validation error.
-                    </p>
-                @endif
             </div>
 
             {{-- Buttons --}}
@@ -146,7 +154,7 @@
 
                 <button type="submit"
                         class="px-5 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-                    Create Question
+                    Update Question
                 </button>
             </div>
 
@@ -156,15 +164,11 @@
 @endsection
 
 @section('scripts')
-    {{-- Quill --}}
     <link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
-
-    {{-- Image resize module --}}
     <script src="https://unpkg.com/quill-image-resize-module@3.0.0/image-resize.min.js"></script>
 
     <style>
-        /* Wrapper styles */
         .quillWrap .ql-container { height: auto !important; border: 0 !important; }
         .quillWrap .ql-toolbar { border: 0 !important; border-bottom: 1px solid rgba(0,0,0,.12) !important; }
         .dark .quillWrap .ql-toolbar { border-bottom-color: rgba(255,255,255,.10) !important; }
@@ -172,10 +176,8 @@
         #questionEditor .ql-editor { min-height: 140px; }
         #explanationEditor .ql-editor { min-height: 110px; }
 
-        /* Images */
         .ql-editor img { height: auto; display: block; max-width: 100%; }
 
-        /* Dark mode */
         .dark .ql-toolbar.ql-snow,
         .dark .ql-container.ql-snow { border-color: rgba(255,255,255,.10); }
         .dark .ql-snow .ql-stroke { stroke: rgba(255,255,255,.75); }
@@ -189,17 +191,13 @@
             const uploadUrl = @json($quillUploadUrl);
             const csrfToken = @json(csrf_token());
 
-            // ✅ Register imageResize module
             const mod =
                 (window.ImageResize && (window.ImageResize.default || window.ImageResize)) ||
                 (window.QuillImageResizeModule && (window.QuillImageResizeModule.default || window.QuillImageResizeModule));
 
             if (mod) {
-                try {
-                    Quill.import('modules/imageResize');
-                } catch (e) {
-                    Quill.register('modules/imageResize', mod);
-                }
+                try { Quill.import('modules/imageResize'); }
+                catch (e) { Quill.register('modules/imageResize', mod); }
             }
 
             const toolbarOptions = [
@@ -215,7 +213,6 @@
 
             async function uploadImage(file) {
                 if (!uploadUrl) return null;
-
                 const fd = new FormData();
                 fd.append('image', file);
 
@@ -226,7 +223,6 @@
                 });
 
                 if (!res.ok) return null;
-
                 const data = await res.json();
                 return data?.url ?? null;
             }
@@ -238,10 +234,8 @@
             }
 
             function bindPasteAndDropUpload(quill) {
-                // ✅ Paste images -> upload -> insert URL (prevents Base64 huge HTML)
                 quill.root.addEventListener('paste', async (e) => {
-                    if (!uploadUrl) return; // allow default if no uploader
-
+                    if (!uploadUrl) return;
                     const items = (e.clipboardData || window.clipboardData)?.items || [];
                     const imgItem = Array.from(items).find(it => it.type && it.type.startsWith('image/'));
                     if (!imgItem) return;
@@ -251,15 +245,11 @@
                     if (!file) return;
 
                     const url = await uploadImage(file);
-                    if (!url) return;
-
-                    insertImageAtCursor(quill, url);
+                    if (url) insertImageAtCursor(quill, url);
                 });
 
-                // ✅ Drag/drop images -> upload -> insert URL
                 quill.root.addEventListener('drop', async (e) => {
                     if (!uploadUrl) return;
-
                     const files = e.dataTransfer?.files;
                     if (!files || !files.length) return;
 
@@ -268,9 +258,7 @@
 
                     e.preventDefault();
                     const url = await uploadImage(file);
-                    if (!url) return;
-
-                    insertImageAtCursor(quill, url);
+                    if (url) insertImageAtCursor(quill, url);
                 });
 
                 quill.root.addEventListener('dragover', (e) => {
@@ -286,9 +274,7 @@
                             container: toolbarOptions,
                             handlers: {
                                 image: function () {
-                                    // If uploader exists, open file picker and upload
                                     if (!uploadUrl) {
-                                        // fallback: default behavior (URL prompt)
                                         const tooltip = this.quill.theme.tooltip;
                                         tooltip.edit('image');
                                         tooltip.textbox.placeholder = 'Paste image URL...';
@@ -306,33 +292,24 @@
                                         if (!file) return;
 
                                         const url = await uploadImage(file);
-                                        if (!url) {
-                                            alert('Image upload failed.');
-                                            return;
-                                        }
+                                        if (!url) return alert('Image upload failed.');
 
                                         insertImageAtCursor(this.quill, url);
                                     };
                                 }
                             }
                         },
-                        imageResize: mod ? { modules: ['Resize', 'DisplaySize', 'Toolbar'] } : undefined
+                        imageResize: mod ? { modules: ['Resize','DisplaySize','Toolbar'] } : undefined
                     }
                 });
 
-                // initial html
-                if (initialHtml) {
-                    quill.clipboard.dangerouslyPasteHTML(initialHtml);
-                }
-
-                // stop Base64 paste only when uploader exists
+                if (initialHtml) quill.clipboard.dangerouslyPasteHTML(initialHtml);
                 bindPasteAndDropUpload(quill);
-
                 return quill;
             }
 
-            const questionQuill = initQuill('#questionEditor', @json(old('question', '')));
-            const explanationQuill = initQuill('#explanationEditor', @json(old('explanation', '')));
+            const questionQuill = initQuill('#questionEditor', @json(old('question', $question->question)));
+            const explanationQuill = initQuill('#explanationEditor', @json(old('explanation', $question->explanation)));
 
             document.getElementById('questionForm').addEventListener('submit', function () {
                 document.getElementById('questionInput').value = questionQuill.root.innerHTML;

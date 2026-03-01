@@ -4,9 +4,11 @@
 
 @section('content')
 @php
-    // $progress comes from controller (LessonViewController@show)
     $isDone = !empty($progress?->completed_at);
     $isViewed = !empty($progress?->viewed_at);
+
+    // ✅ Back URL: prefer explicit query param (?back=...), otherwise fallback
+    $backUrl = request('back') ?: url()->previous();
 @endphp
 
 <div class="min-h-screen bg-gray-50">
@@ -34,26 +36,15 @@
                     @endif
                 </div>
 
-                <h1 class="text-lg font-semibold text-gray-900">{{ $lesson->title }}</h1>
+                <h1 class="text-lg md:text-lg font-bold text-gray-900">{{ $lesson->title }}</h1>
 
                 <p class="text-sm text-gray-600">
                     Course: <span class="font-medium">{{ $course->title }}</span>
                 </p>
-
-                {{-- Mark Done Button --}}
-                @if(!$isDone)
-                    <form method="POST" action="{{ route('student.lessons.done', [$course->id, $lesson->id]) }}">
-                        @csrf
-                        <button type="submit"
-                            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700">
-                            ✅ Mark as Done
-                        </button>
-                    </form>
-                @endif
             </div>
 
-            <a href="{{ url()->previous() }}"
-                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50">
+            <a href="{{ $backUrl }}"
+               class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50">
                 <i class="fa-solid fa-arrow-left"></i> Back
             </a>
         </div>
@@ -107,6 +98,34 @@
                 @endforeach
             </div>
         @endif
+
+        {{-- ✅ End of lesson actions --}}
+        <div class="pt-2">
+            @if(!$isDone)
+                <form method="POST" action="{{ route('student.lessons.done', [$course->id, $lesson->id]) }}">
+                    @csrf
+                    {{-- keep return/back so after submit you come back properly --}}
+                    <input type="hidden" name="back" value="{{ $backUrl }}">
+
+                    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <div class="font-semibold text-gray-900">Finished this lesson?</div>
+                            <div class="text-sm text-gray-500">Mark it as done to update your progress.</div>
+                        </div>
+
+                        <button type="submit"
+                            class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-green-600 text-white hover:bg-green-700">
+                            ✅ Mark as Done
+                        </button>
+                    </div>
+                </form>
+            @else
+                <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+                    <div class="font-semibold text-gray-900">✅ Lesson completed</div>
+                    <div class="text-sm text-gray-500 mt-1">You’ve already marked this lesson as done.</div>
+                </div>
+            @endif
+        </div>
 
     </div>
 </div>

@@ -303,29 +303,29 @@
                                                     $sum = $quizAttemptSummary[$quiz->id] ?? null;
 
                                                     $used = (int)($sum['used'] ?? 0);
-                                                    $max  = (int)($quiz->max_attempts ?? 0); // 0 means unlimited
+                                                    $max  = (int)($quiz->max_attempts ?? 0); // 0 = unlimited
 
                                                     $hasInProgress = !empty($sum) && ($sum['status'] ?? null) === 'in_progress';
                                                     $hasSubmitted  = $used > 0;
 
-                                                    // ✅ Determine pass/fail based on latest submitted attempt score (if exists)
-                                                    $lastAttempt = $sum['last'] ?? null;
+                                                    // ✅ use latest submitted attempt for result/score
+                                                    $lastSubmitted = $sum['last_submitted'] ?? null;
 
                                                     $passMark = (int)($quiz->pass_mark ?? 0);
                                                     $isPassed = null;
+                                                    $scoreText = null;
 
-                                                    if ($hasSubmitted && $lastAttempt && $lastAttempt->submitted_at) {
-                                                        // score/total columns: your controller uses score + total
-                                                        $total = (int)($lastAttempt->total ?? $lastAttempt->total_marks ?? 0);
-                                                        $score = (int)($lastAttempt->score ?? 0);
+                                                    if ($lastSubmitted) {
+                                                        $total = (int)($lastSubmitted->total ?? $lastSubmitted->total_marks ?? 0);
+                                                        $score = (int)($lastSubmitted->score ?? 0);
 
                                                         if ($total > 0) {
-                                                            $percent = round(($score / $total) * 100);
-                                                            $isPassed = $percent >= $passMark;
+                                                            $percent = (int) round(($score / $total) * 100);
+                                                            $scoreText = "{$score}/{$total} ({$percent}%)";
+                                                            if ($passMark > 0) $isPassed = $percent >= $passMark;
                                                         }
                                                     }
 
-                                                    // Badge text + class
                                                     if ($hasInProgress) {
                                                         $badgeText = 'In progress';
                                                         $badgeClass = 'bg-blue-100 text-blue-700 border-blue-200';
@@ -345,12 +345,11 @@
                                                         $badgeClass = 'bg-gray-100 text-gray-600 border-gray-200';
                                                     }
 
-                                                    // Attempts label
                                                     $attemptText = $max > 0 ? "{$used}/{$max}" : "{$used}/∞";
                                                 @endphp
 
                                                 <a href="{{ route('student.quizzes.show', [$course->id, $quiz->id]) }}"
-                                                    class="group flex items-center justify-between gap-4 rounded-xl border border-gray-200 hover:border-purple-200 hover:bg-purple-50/30 transition p-4">
+                                                class="group flex items-center justify-between gap-4 rounded-xl border border-gray-200 hover:border-purple-200 hover:bg-purple-50/30 transition p-4">
 
                                                     <div class="flex items-center gap-3">
                                                         <div class="w-10 h-10 rounded-xl bg-purple-50 grid place-items-center text-purple-700 border border-purple-100">
@@ -361,14 +360,29 @@
                                                             <div class="text-xs text-gray-500 uppercase tracking-wide">Quiz</div>
                                                             <div class="font-semibold text-gray-900">{{ $quiz->title }}</div>
 
-                                                            {{-- Attempts small text --}}
                                                             <div class="text-xs text-gray-500 mt-1">
                                                                 Attempts: <span class="font-semibold text-gray-800">{{ $attemptText }}</span>
                                                             </div>
+
+                                                            {{-- ✅ fill your red-marked empty area --}}
+                                                            @if($scoreText)
+                                                                <div class="text-xs text-gray-500 mt-1">
+                                                                    Score: <span class="font-semibold text-gray-800">{{ $scoreText }}</span>
+                                                                </div>
+                                                            @endif
                                                         </div>
                                                     </div>
 
                                                     <div class="flex items-center gap-3">
+                                                        {{-- ✅ Result button (latest submitted attempt) --}}
+                                                        @if($lastSubmitted)
+                                                            <button type="button"
+                                                                    onclick="event.preventDefault(); event.stopPropagation(); window.location='{{ route('student.quiz.attempt.result', $lastSubmitted->id) }}';"
+                                                                    class="text-xs px-3 py-1.5 rounded-full border border-gray-200 bg-white hover:bg-gray-50 text-gray-700">
+                                                                Result
+                                                            </button>
+                                                        @endif
+
                                                         <span class="text-xs px-2 py-1 rounded-full border {{ $badgeClass }}">
                                                             {{ $badgeText }}
                                                         </span>

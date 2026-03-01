@@ -31,11 +31,11 @@ trait TeacherCounts
         if (empty($courseIds)) return 0;
 
         $pendingAssignments = AssignmentSubmission::whereHas('assignment.course', fn ($q) => $q->whereIn('id', $courseIds))
-            ->where('status', 'submitted')
+            ->whereIn('status', ['submitted', 'reviewed'])
             ->count();
 
         $pendingQuizzes = QuizAttempt::whereHas('quiz.course', fn ($q) => $q->whereIn('id', $courseIds))
-            ->where('status', 'submitted')
+            ->whereIn('status', ['submitted', 'reviewed'])
             ->count();
 
         return $pendingAssignments + $pendingQuizzes;

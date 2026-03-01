@@ -249,7 +249,9 @@ class QuizAttemptController extends Controller
     {
         $user = auth()->user();
         abort_if((int)$attempt->user_id !== (int)$user->id, 403);
-        abort_if($attempt->status !== 'submitted', 403);
+
+        // ✅ allow result for submitted + reviewed + graded
+        abort_if(!in_array($attempt->status, ['submitted', 'reviewed', 'graded'], true), 403);
 
         $attempt->load([
             'quiz.course',
@@ -344,7 +346,7 @@ class QuizAttemptController extends Controller
     private function forceAutoSubmit(QuizAttempt $attempt)
     {
         $attempt->submitted_at = now();
-        $attempt->status = 'submitted';
+        $attempt->status = 'submitted' ;
         $attempt->save();
 
         return redirect()->route('student.quiz.attempt.result', $attempt->id)

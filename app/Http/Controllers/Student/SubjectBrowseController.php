@@ -88,36 +88,36 @@ class SubjectBrowseController extends Controller
         // quizAttemptSummary[quiz_id] = ['used' => int, 'status' => string, 'last' => QuizAttempt|null]
         $quizAttemptSummary = [];
 
-        if (!empty($quizIds)) {
-            $attempts = QuizAttempt::where('user_id', $user->id)
-                ->whereIn('quiz_id', $quizIds)
-                ->orderByDesc('id')
-                ->get()
-                ->groupBy('quiz_id');
+            if (!empty($quizIds)) {
+                $attempts = QuizAttempt::where('user_id', $user->id)
+                    ->whereIn('quiz_id', $quizIds)
+                    ->orderByDesc('id')
+                    ->get()
+                    ->groupBy('quiz_id');
 
-            foreach ($attempts as $quizId => $rows) {
-                // used attempts = only submitted
-                $used = $rows->whereNotNull('submitted_at')->count();
+                foreach ($attempts as $quizId => $rows) {
+                    $used = $rows->whereNotNull('submitted_at')->count();
 
-                // latest attempt (because sorted desc)
-                $last = $rows->first();
+                    $last = $rows->first(); // latest row
 
-                // status
-                $status = 'not_started';
-                if ($rows->where('status', 'in_progress')->count() > 0) {
-                    $status = 'in_progress';
+                    // ✅ latest submitted attempt (what we need for Result button / pass-fail)
+                    $lastSubmitted = $rows->first(fn($a) => !is_null($a->submitted_at));
+
+                    $status = 'not_started';
+                    if ($rows->contains('status', 'in_progress')) {
+                        $status = 'in_progress';
+                    } elseif ($used > 0) {
+                        $status = 'submitted';
+                    }
+
+                    $quizAttemptSummary[$quizId] = [
+                        'used' => $used,
+                        'last' => $last,
+                        'last_submitted' => $lastSubmitted,
+                        'status' => $status,
+                    ];
                 }
-                if ($used > 0) {
-                    $status = 'submitted';
-                }
-
-                $quizAttemptSummary[$quizId] = [
-                    'used' => $used,
-                    'last' => $last,
-                    'status' => $status,
-                ];
             }
-        }
 
         /**
          * =========================================================

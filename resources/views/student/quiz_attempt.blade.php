@@ -2,6 +2,33 @@
 @section('title', 'Take Quiz')
 
 @section('content')
+@php
+    use Illuminate\Support\Str;
+@endphp
+
+@once
+<style>
+  /* Make Quill/HTML questions look perfect */
+  .quizQuestionBody img{
+    max-width: 100% !important;
+    height: auto !important;
+    display: block;
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+  }
+  .quizQuestionBody p{ margin: .5rem 0; }
+  .quizQuestionBody h1,.quizQuestionBody h2,.quizQuestionBody h3{ margin: .25rem 0 .5rem; }
+  .quizQuestionBody ul{ padding-left: 1.25rem; margin: .5rem 0; }
+  .quizQuestionBody ol{ padding-left: 1.25rem; margin: .5rem 0; }
+  .quizQuestionBody blockquote{
+    border-left: 4px solid #e5e7eb;
+    padding-left: 12px;
+    color: #374151;
+    margin: .75rem 0;
+  }
+</style>
+@endonce
+
 <div class="min-h-screen bg-gray-50">
   <div class="max-w-5xl mx-auto px-4 py-8 space-y-6">
 
@@ -16,7 +43,6 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-3">
-
         {{-- TIMER BOX --}}
         @if(!empty($timeLimitMinutes) && $timeLimitMinutes > 0 && !empty($endsAt))
           <div id="timerBox"
@@ -82,6 +108,10 @@
         @php
           $existing = $answers[$q->id] ?? null;
           $existingAnswer = $existing?->answer ?? [];
+
+          // ✅ Render Quill HTML if it looks like HTML
+          $qText = $q->question ?? '';
+          $looksHtml = Str::contains($qText, ['<p', '<h', '<div', '<span', '<img', '<br', '</']);
         @endphp
 
         <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-5">
@@ -92,23 +122,25 @@
             <div class="text-sm font-semibold text-gray-900">{{ (int)$q->marks }} marks</div>
           </div>
 
-          {{-- Question text --}}
-          <div class="text-gray-900 font-semibold leading-relaxed">
-            {!! nl2br(e($q->question)) !!}
+          {{-- ✅ Question text (FIXED) --}}
+          <div class="quizQuestionBody prose max-w-none text-gray-900">
+            @if($looksHtml)
+              {!! $qText !!}
+            @else
+              {!! nl2br(e($qText)) !!}
+            @endif
           </div>
 
-          {{-- Optional image --}}
+          {{-- Optional separate image field --}}
           @if(!empty($q->question_image))
             <img src="{{ asset('storage/'.$q->question_image) }}"
                  class="max-h-72 rounded-2xl border border-gray-200 shadow-sm" />
           @endif
 
-          {{-- Answer types --}}
           {{-- TRUE / FALSE --}}
           @if($q->type === 'true_false')
-            @php
-              $current = $existingAnswer['value'] ?? null;
-            @endphp
+            @php $current = $existingAnswer['value'] ?? null; @endphp
+
             <div class="grid sm:grid-cols-2 gap-3">
               <label class="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-4 hover:bg-gray-50 cursor-pointer transition">
                 <input type="radio" class="h-5 w-5 text-blue-600 border-gray-300 focus:ring-blue-500"
@@ -143,6 +175,13 @@
                     class="h-5 w-5 text-blue-600 border-gray-300 focus:ring-blue-500"
                     {{ $checked ? 'checked' : '' }}
                   >
+
+                  {{-- option image (if you use it) --}}
+                  @if(!empty($opt->option_image))
+                    <img src="{{ asset('storage/'.$opt->option_image) }}"
+                         class="w-12 h-12 rounded-xl border border-gray-200 object-cover">
+                  @endif
+
                   <span class="text-gray-900 font-medium">
                     {{ $label }}
                   </span>
@@ -173,6 +212,12 @@
                     class="h-5 w-5 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
                     {{ $checked ? 'checked' : '' }}
                   >
+
+                  @if(!empty($opt->option_image))
+                    <img src="{{ asset('storage/'.$opt->option_image) }}"
+                         class="w-12 h-12 rounded-xl border border-gray-200 object-cover">
+                  @endif
+
                   <span class="text-gray-900 font-medium">
                     {{ $label }}
                   </span>
@@ -184,8 +229,6 @@
           {{-- TEXT --}}
           @if($q->type === 'text')
             @php $val = $existingAnswer['text'] ?? ''; @endphp
-
-            {{-- short input style (perfect for 1+1) --}}
             <input
               type="text"
               name="answers[{{ $q->id }}]"
@@ -234,7 +277,6 @@
   </div>
 </div>
 @endsection
-
 
 @section('scripts')
 @if(!empty($timeLimitMinutes) && $timeLimitMinutes > 0)

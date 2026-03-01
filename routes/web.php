@@ -20,6 +20,7 @@ use App\Http\Controllers\Student\QuizViewController;
 use App\Http\Controllers\Student\AssignmentViewController;
 use App\Http\Controllers\Student\QuizAttemptController;
 use App\Http\Controllers\Student\AssignmentSubmissionController as StudentAssignmentSubmissionController;
+use App\Http\Controllers\Student\NotificationController as StudentNotificationController;
 
 
 
@@ -80,6 +81,8 @@ Route::middleware(['auth', 'admin'])
 
         Route::post('teachers/{teacher}/courses', [TeacherController::class, 'updateCourses'])
             ->name('teachers.courses.update');
+        Route::post('/quill/upload', [\App\Http\Controllers\Admin\QuillUploadController::class, 'store'])
+              ->name('quill.upload');
             
 });
 
@@ -107,6 +110,9 @@ Route::middleware(['auth', 'role:student'])
         // ✅ Quiz
         Route::get('/courses/{course}/quizzes/{quiz}', [QuizViewController::class, 'show'])
             ->name('quizzes.show');
+        Route::get('/grades', [\App\Http\Controllers\Student\GradesController::class, 'index'])
+            ->name('grades.index');
+            
 
         // ✅ Assignment
         Route::get('/courses/{course}/assignments/{assignment}', [AssignmentViewController::class, 'show'])
@@ -117,6 +123,11 @@ Route::middleware(['auth', 'role:student'])
         Route::get('/attempts/{attempt}/result', [QuizAttemptController::class, 'result'])->name('quiz.attempt.result');
         Route::post('/courses/{course}/assignments/{assignment}/submit', [StudentAssignmentSubmissionController::class, 'store'])
                ->name('assignments.submit');
+        Route::get('/notifications', [StudentNotificationController::class, 'index'])->name('notifications.index');
+        Route::post('/notifications/read-all', [StudentNotificationController::class, 'readAll'])->name('notifications.readAll');
+
+        Route::post('/notifications/{id}/read', [StudentNotificationController::class, 'read'])->name('notifications.read');
+        Route::post('/notifications/{id}/unread', [StudentNotificationController::class, 'unread'])->name('notifications.unread');
     });
 
 use App\Http\Controllers\Teacher\SubmissionController;
@@ -161,6 +172,10 @@ Route::middleware(['auth', 'role:teacher'])
 
         Route::post('/notifications/read-all', [\App\Http\Controllers\Teacher\NotificationController::class, 'markAllRead'])
             ->name('notifications.read_all');
+        Route::get('/courses/{course}/students/{student}', [\App\Http\Controllers\Teacher\CourseController::class, 'studentProgress'])
+              ->name('courses.students.show');
+            
+
     });
 
 Route::middleware(['auth', 'role:staff'])

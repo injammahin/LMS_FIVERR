@@ -25,7 +25,7 @@ class QuizQuestionController extends Controller
     {
         $validated = $request->validate([
             'type' => ['required','in:text,file,single_choice,multiple_choice,true_false'],
-            'question' => ['required','string','max:5000'],
+            'question' => ['required','string','max:50000'],
             'question_image' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:4096'],
             'explanation' => ['nullable','string'],
             'marks' => ['required','integer','min:1','max:100'],

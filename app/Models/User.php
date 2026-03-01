@@ -20,7 +20,7 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
-        'division_id',      // ✅ add this (you use division_id everywhere)
+        'division_id',      
         'name',
         'email',
         'username',
