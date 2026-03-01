@@ -18,6 +18,7 @@ class Lesson extends Model
 
     protected $casts = [
         'content_blocks' => 'array',
+         'course_id' => 'integer',
     ];
 
     public function course()

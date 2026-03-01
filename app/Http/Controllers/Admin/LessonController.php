@@ -53,13 +53,13 @@ class LessonController extends Controller
 
     public function edit(Course $course, Lesson $lesson)
     {
-        abort_if($lesson->course_id !== $course->id, 404);
+        // abort_if($lesson->course_id !== $course->id, 404);
         return view('admin.lessons.edit', compact('course', 'lesson'));
     }
 
     public function update(Request $request, Course $course, Lesson $lesson)
     {
-        abort_if($lesson->course_id !== $course->id, 404);
+        // abort_if($lesson->course_id !== $course->id, 404);
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
@@ -91,7 +91,7 @@ class LessonController extends Controller
 
     public function destroy(Course $course, Lesson $lesson)
     {
-        abort_if($lesson->course_id !== $course->id, 404);
+        // abort_if($lesson->course_id !== $course->id, 404);
 
         // delete stored block files
         foreach (($lesson->content_blocks ?? []) as $b) {

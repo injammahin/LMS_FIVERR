@@ -14,7 +14,9 @@ class Course extends Model
         'thumbnail',
         'status',
     ];
-
+    protected $casts = [
+        'id' => 'integer',
+    ];
     public function subject()
     {
         return $this->belongsTo(Subject::class);
