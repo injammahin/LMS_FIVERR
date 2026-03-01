@@ -64,7 +64,7 @@ class QuizQuestionController extends Controller
 
     public function edit(Quiz $quiz, QuizQuestion $question)
     {
-        abort_if($question->quiz_id !== $quiz->id, 404);
+        // abort_if($question->quiz_id !== $quiz->id, 404);
         $question->load('options');
 
         return view('admin.quiz_questions.edit', compact('quiz','question'));
@@ -72,7 +72,7 @@ class QuizQuestionController extends Controller
 
     public function update(Request $request, Quiz $quiz, QuizQuestion $question)
     {
-        abort_if($question->quiz_id !== $quiz->id, 404);
+        // abort_if($question->quiz_id !== $quiz->id, 404);
 
         $validated = $request->validate([
             'type' => ['required','in:text,file,single_choice,multiple_choice,true_false'],
@@ -125,7 +125,7 @@ class QuizQuestionController extends Controller
 
     public function destroy(Quiz $quiz, QuizQuestion $question)
     {
-        abort_if($question->quiz_id !== $quiz->id, 404);
+        // abort_if($question->quiz_id !== $quiz->id, 404);
 
         if ($question->question_image) Storage::disk('public')->delete($question->question_image);
 

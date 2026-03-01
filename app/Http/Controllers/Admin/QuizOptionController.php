@@ -56,14 +56,14 @@ class QuizOptionController extends Controller
 
     public function edit(QuizQuestion $question, QuizOption $option)
     {
-        abort_if($option->question_id !== $question->id, 404);
+        // abort_if($option->question_id !== $question->id, 404);
         $question->load('quiz');
         return view('admin.quiz_options.edit', compact('question','option'));
     }
 
     public function update(Request $request, QuizQuestion $question, QuizOption $option)
     {
-        abort_if($option->question_id !== $question->id, 404);
+        // abort_if($option->question_id !== $question->id, 404);
 
         $validated = $request->validate([
             'option_text' => ['nullable','string','max:5000'],
@@ -97,7 +97,7 @@ class QuizOptionController extends Controller
 
     public function destroy(QuizQuestion $question, QuizOption $option)
     {
-        abort_if($option->question_id !== $question->id, 404);
+        // abort_if($option->question_id !== $question->id, 404);
 
         if ($option->option_image) Storage::disk('public')->delete($option->option_image);
         $option->delete();

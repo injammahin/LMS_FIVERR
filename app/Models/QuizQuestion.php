@@ -19,6 +19,7 @@ class QuizQuestion extends Model
 
     protected $casts = [
         'is_required' => 'boolean',
+        'quiz_id' => 'integer',
     ];
 
     public function quiz()

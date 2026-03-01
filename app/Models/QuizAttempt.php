@@ -15,6 +15,7 @@ class QuizAttempt extends Model
         'submitted_at' => 'datetime',
         'ends_at' => 'datetime', 
         'duration_seconds' => 'integer',
+        'quiz_id' => 'integer',
         
     ];
 

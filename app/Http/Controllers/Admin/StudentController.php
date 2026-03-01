@@ -93,7 +93,7 @@ public function create()
 
 public function edit(User $student)
 {
-    abort_if($student->role !== 'student', 404);
+    // abort_if($student->role !== 'student', 404);
 
     $divisions = Division::orderBy('name')->get();
     return view('admin.students.edit', compact('student', 'divisions'));

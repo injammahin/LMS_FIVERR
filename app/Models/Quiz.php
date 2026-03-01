@@ -21,6 +21,7 @@ class Quiz extends Model
     protected $casts = [
         'shuffle_questions' => 'boolean',
         'shuffle_options' => 'boolean',
+        'course_id'  => 'integer',
     ];
 
     public function course()

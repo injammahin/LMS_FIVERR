@@ -54,13 +54,13 @@ class QuizController extends Controller
 
     public function edit(Course $course, Quiz $quiz)
     {
-        abort_if($quiz->course_id !== $course->id, 404);
+        // abort_if($quiz->course_id !== $course->id, 404);
         return view('admin.quizzes.edit', compact('course','quiz'));
     }
 
     public function update(Request $request, Course $course, Quiz $quiz)
     {
-        abort_if($quiz->course_id !== $course->id, 404);
+        // abort_if($quiz->course_id !== $course->id, 404);
 
         $validated = $request->validate([
             'title' => ['required','string','max:255'],
@@ -93,7 +93,7 @@ class QuizController extends Controller
 
     public function destroy(Course $course, Quiz $quiz)
     {
-        abort_if($quiz->course_id !== $course->id, 404);
+        // abort_if($quiz->course_id !== $course->id, 404);
 
         $quiz->delete();
 

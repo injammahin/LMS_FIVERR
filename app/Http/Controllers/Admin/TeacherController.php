@@ -63,13 +63,13 @@ class TeacherController extends Controller
 
     public function edit(User $teacher)
     {
-        abort_if($teacher->role !== 'teacher', 404);
+        // abort_if($teacher->role !== 'teacher', 404);
         return view('admin.teachers.edit', compact('teacher'));
     }
 
     public function update(Request $request, User $teacher)
     {
-        abort_if($teacher->role !== 'teacher', 404);
+        // abort_if($teacher->role !== 'teacher', 404);
 
         $request->validate([
             'name' => 'required',
@@ -95,7 +95,7 @@ class TeacherController extends Controller
 
     public function destroy(User $teacher)
     {
-        abort_if($teacher->role !== 'teacher', 404);
+        // abort_if($teacher->role !== 'teacher', 404);
 
         // optional: detach courses before delete
         $teacher->coursesTeaching()->detach();
@@ -110,7 +110,7 @@ class TeacherController extends Controller
      */
     public function editCourses(Request $request, User $teacher)
     {
-        abort_if($teacher->role !== 'teacher', 404);
+        // abort_if($teacher->role !== 'teacher', 404);
 
         // filters
         $divisionId = $request->get('division_id');
@@ -155,7 +155,7 @@ class TeacherController extends Controller
      */
     public function updateCourses(Request $request, User $teacher)
     {
-        abort_if($teacher->role !== 'teacher', 404);
+        // abort_if($teacher->role !== 'teacher', 404);
 
         $validated = $request->validate([
             'course_ids' => ['nullable', 'array'],

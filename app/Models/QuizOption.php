@@ -16,6 +16,7 @@ class QuizOption extends Model
 
     protected $casts = [
         'is_correct' => 'boolean',
+        'question_id' => 'integer',
     ];
 
     // ✅ Universal label for views: use $opt->label everywhere
