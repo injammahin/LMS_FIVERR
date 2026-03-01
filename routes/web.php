@@ -56,8 +56,8 @@ Route::middleware(['auth', 'admin'])
         Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])
            ->name('dashboard');
 
-        Route::view('/courses', 'admin.courses.index')->name('courses.index');
-        Route::view('/courses/create', 'admin.courses.create')->name('courses.create');
+        // Route::view('/courses', 'admin.courses.index')->name('courses.index');
+        // Route::view('/courses/create', 'admin.courses.create')->name('courses.create');
 
         Route::resource('students', \App\Http\Controllers\Admin\StudentController::class);
         Route::resource('teachers', \App\Http\Controllers\Admin\TeacherController::class);
