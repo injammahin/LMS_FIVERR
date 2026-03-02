@@ -9,6 +9,7 @@ use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class TeacherController extends Controller
 {
@@ -21,8 +22,8 @@ class TeacherController extends Controller
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%$search%")
-                      ->orWhere('email', 'like', "%$search%")
-                      ->orWhere('username', 'like', "%$search%");
+                        ->orWhere('email', 'like', "%$search%")
+                        ->orWhere('username', 'like', "%$search%");
                 });
             })
             ->latest()
@@ -40,22 +41,33 @@ class TeacherController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'password' => 'required|min:6',
-            'email' => 'nullable|required_without:username|email|unique:users,email',
-            'username' => 'nullable|required_without:email|unique:users,username',
+            'name'       => ['required', 'string', 'max:255'],
+            'password'   => ['required', 'string', 'min:6'],
+            'login_type' => ['required', Rule::in(['email', 'username'])],
+
+            'email' => [
+                'nullable',
+                'email',
+                Rule::unique('users', 'email'),
+                Rule::requiredIf(fn () => $request->login_type === 'email'),
+            ],
+            'username' => [
+                'nullable',
+                Rule::unique('users', 'username'),
+                Rule::requiredIf(fn () => $request->login_type === 'username'),
+            ],
         ]);
 
         $teacher = User::create([
             'name' => $request->name,
-            'email' => $request->email ?: null,
-            'username' => $request->username ?: null,
+            'email' => $request->login_type === 'email' ? $request->email : null,
+            'username' => $request->login_type === 'username' ? $request->username : null,
             'password' => Hash::make($request->password),
-            'plain_password' => $request->password,
+            'plain_password' => $request->password, // ⚠️ not recommended in production
             'role' => 'teacher',
+            'is_active' => true,
         ]);
 
-        // ✅ best practice: go to assign courses page immediately
         return redirect()
             ->route('admin.teachers.courses.edit', $teacher->id)
             ->with('success', 'Teacher created successfully. Now assign courses.');
@@ -63,45 +75,79 @@ class TeacherController extends Controller
 
     public function edit(User $teacher)
     {
-        // abort_if($teacher->role !== 'teacher', 404);
+        abort_if($teacher->role !== 'teacher', 404);
+
         return view('admin.teachers.edit', compact('teacher'));
     }
 
     public function update(Request $request, User $teacher)
     {
-        // abort_if($teacher->role !== 'teacher', 404);
+        abort_if($teacher->role !== 'teacher', 404);
 
         $request->validate([
-            'name' => 'required',
-            'email' => 'nullable|email|unique:users,email,' . $teacher->id,
-            'username' => 'nullable|unique:users,username,' . $teacher->id,
-            'password' => 'nullable|min:6',
+            'name'       => ['required', 'string', 'max:255'],
+            'password'   => ['nullable', 'string', 'min:6'],
+            'login_type' => ['required', Rule::in(['email', 'username'])],
+
+            'email' => [
+                'nullable',
+                'email',
+                Rule::unique('users', 'email')->ignore($teacher->id),
+                Rule::requiredIf(fn () => $request->login_type === 'email'),
+            ],
+            'username' => [
+                'nullable',
+                Rule::unique('users', 'username')->ignore($teacher->id),
+                Rule::requiredIf(fn () => $request->login_type === 'username'),
+            ],
         ]);
 
         $teacher->name = $request->name;
-        $teacher->email = $request->email;
-        $teacher->username = $request->username;
 
-        if ($request->password) {
+        // ✅ Only one login method is stored
+        $teacher->email = $request->login_type === 'email' ? $request->email : null;
+        $teacher->username = $request->login_type === 'username' ? $request->username : null;
+
+        if ($request->filled('password')) {
             $teacher->password = Hash::make($request->password);
-            $teacher->plain_password = $request->password;
+            $teacher->plain_password = $request->password; // ⚠️ not recommended in production
         }
 
         $teacher->save();
 
-        return redirect()->route('admin.teachers.index')
+        return redirect()
+            ->route('admin.teachers.index')
             ->with('success', 'Teacher updated successfully.');
     }
 
     public function destroy(User $teacher)
     {
-        // abort_if($teacher->role !== 'teacher', 404);
+        abort_if($teacher->role !== 'teacher', 404);
 
-        // optional: detach courses before delete
-        $teacher->coursesTeaching()->detach();
+        // detach relation if exists
+        if (method_exists($teacher, 'coursesTeaching')) {
+            $teacher->coursesTeaching()->detach();
+        }
 
         $teacher->delete();
+
         return back()->with('success', 'Teacher deleted successfully.');
+    }
+
+    /**
+     * ✅ Admin suspend/reactivate teacher
+     */
+    public function toggleStatus(User $teacher)
+    {
+        abort_if($teacher->role !== 'teacher', 404);
+
+        $teacher->is_active = !$teacher->is_active;
+        $teacher->save();
+
+        return back()->with(
+            'success',
+            $teacher->is_active ? 'Teacher activated successfully.' : 'Teacher suspended successfully.'
+        );
     }
 
     /**
@@ -110,27 +156,26 @@ class TeacherController extends Controller
      */
     public function editCourses(Request $request, User $teacher)
     {
-        // abort_if($teacher->role !== 'teacher', 404);
+        abort_if($teacher->role !== 'teacher', 404);
 
-        // filters
         $divisionId = $request->get('division_id');
         $subjectId  = $request->get('subject_id');
         $search     = $request->get('search');
 
-        // dropdowns
         $divisions = Division::orderBy('name')->get();
 
         $subjectsQuery = Subject::with('division')->orderBy('name');
-        if ($divisionId) $subjectsQuery->where('division_id', $divisionId);
+        if ($divisionId) {
+            $subjectsQuery->where('division_id', $divisionId);
+        }
         $subjects = $subjectsQuery->get();
 
-        // course list
         $coursesQuery = Course::with(['subject.division'])->orderBy('title');
 
         if ($subjectId) {
             $coursesQuery->where('subject_id', $subjectId);
         } elseif ($divisionId) {
-            $coursesQuery->whereHas('subject', fn($q) => $q->where('division_id', $divisionId));
+            $coursesQuery->whereHas('subject', fn ($q) => $q->where('division_id', $divisionId));
         }
 
         if ($search) {
@@ -139,13 +184,19 @@ class TeacherController extends Controller
 
         $courses = $coursesQuery->paginate(15)->withQueryString();
 
-        // already assigned
-        $assigned = $teacher->coursesTeaching()->pluck('courses.id')->toArray();
+        $assigned = method_exists($teacher, 'coursesTeaching')
+            ? $teacher->coursesTeaching()->pluck('courses.id')->toArray()
+            : [];
 
         return view('admin.teachers.courses', compact(
-            'teacher', 'courses', 'assigned',
-            'divisions', 'subjects',
-            'divisionId', 'subjectId', 'search'
+            'teacher',
+            'courses',
+            'assigned',
+            'divisions',
+            'subjects',
+            'divisionId',
+            'subjectId',
+            'search'
         ));
     }
 
@@ -155,7 +206,7 @@ class TeacherController extends Controller
      */
     public function updateCourses(Request $request, User $teacher)
     {
-        // abort_if($teacher->role !== 'teacher', 404);
+        abort_if($teacher->role !== 'teacher', 404);
 
         $validated = $request->validate([
             'course_ids' => ['nullable', 'array'],
@@ -164,7 +215,10 @@ class TeacherController extends Controller
 
         $courseIds = $validated['course_ids'] ?? [];
 
-        // sync = match exactly selected
+        if (!method_exists($teacher, 'coursesTeaching')) {
+            return back()->with('error', 'coursesTeaching() relation not found on User model.');
+        }
+
         $teacher->coursesTeaching()->sync($courseIds);
 
         return redirect()

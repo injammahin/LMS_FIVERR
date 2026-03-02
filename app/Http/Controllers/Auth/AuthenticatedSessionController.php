@@ -4,35 +4,40 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
-use App\Providers\RouteServiceProvider;
-use Illuminate\Http\RedirectResponse;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\View\View;
+use Illuminate\Validation\ValidationException;
 
 class AuthenticatedSessionController extends Controller
 {
-    /**
-     * Display the login view.
-     */
-    public function create(): View
+    public function create()
     {
         return view('auth.login');
     }
 
-    /**
-     * Handle an incoming authentication request.
-     */
     public function store(LoginRequest $request)
     {
-        $request->authenticate();
+        // 👇 Get whatever you use in the login field (usually "email")
+        $login = $request->input('email');
 
+        // 👇 Support email OR username login (adjust if you only use email)
+        $user = User::where('email', $login)
+            ->orWhere('username', $login)
+            ->first();
+
+        // ✅ Stop suspended user BEFORE authenticate()
+        if ($user && $user->is_active === false) {
+            throw ValidationException::withMessages([
+                'email' => 'Your account is suspended. Please contact admin.',
+            ]);
+        }
+
+        // normal login
+        $request->authenticate();
         $request->session()->regenerate();
 
         $user = Auth::user();
-
-        // Optional: stop "intended" redirect so it always goes by role
-        // $request->session()->forget('url.intended');
 
         return match ($user->role) {
             'admin'   => redirect()->route('admin.dashboard'),
@@ -42,17 +47,12 @@ class AuthenticatedSessionController extends Controller
             default   => redirect()->route('dashboard'),
         };
     }
-    /**
-     * Destroy an authenticated session.
-     */
-    public function destroy(Request $request): RedirectResponse
+
+    public function destroy(Request $request)
     {
         Auth::guard('web')->logout();
-
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
-
         return redirect('/');
     }
 }

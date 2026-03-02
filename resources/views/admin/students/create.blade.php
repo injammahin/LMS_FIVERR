@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="max-w-2xl mx-auto space-y-6 text-xxs"
-        x-data="{ loginType: '{{ old('username') ? 'username' : 'email' }}', show: false }">
+        x-data="{ loginType: '{{ old('login_type', 'email') }}', show: false }">
 
         <h1 class="text-lg font-semibold text-gray-800 dark:text-white">Add Student</h1>
 
@@ -50,32 +50,35 @@
                     <label class="block mb-2 text-gray-700 dark:text-white/80">Login Type</label>
                     <div class="flex gap-6 text-gray-700 dark:text-white/80">
                         <label class="inline-flex items-center gap-2">
-                            <input type="radio" value="email" x-model="loginType">
+                            <input type="radio" name="login_type" value="email" x-model="loginType">
                             Email
                         </label>
                         <label class="inline-flex items-center gap-2">
-                            <input type="radio" value="username" x-model="loginType">
+                            <input type="radio" name="login_type" value="username" x-model="loginType">
                             Username
                         </label>
                     </div>
                 </div>
 
                 {{-- Email --}}
-                <div x-show="loginType==='email'">
-                    <label class="block mb-1 text-gray-700 dark:text-white/80">Email</label>
-                    <input type="email" name="email" value="{{ old('email') }}"
-                        class="w-full px-3 py-2 border rounded-lg bg-white dark:bg-slate-950 dark:text-white dark:border-white/10">
-                    @error('email') <p class="text-red-500 text-sm mt-1">{{ $message }}</p> @enderror
-                </div>
+                <template x-if="loginType === 'email'">
+                    <div>
+                        <label class="block mb-1 text-gray-700 dark:text-white/80">Email</label>
+                        <input type="email" name="email" value="{{ old('email') }}" autocomplete="email"
+                            class="w-full px-3 py-2 border rounded-lg bg-white dark:bg-slate-950 dark:text-white dark:border-white/10">
+                        @error('email') <p class="text-red-500 text-sm mt-1">{{ $message }}</p> @enderror
+                    </div>
+                </template>
 
                 {{-- Username --}}
-                <div x-show="loginType==='username'">
-                    <label class="block mb-1 text-gray-700 dark:text-white/80">Username</label>
-                    <input type="text" name="username" value="{{ old('username') }}"
-                        class="w-full px-3 py-2 border rounded-lg bg-white dark:bg-slate-950 dark:text-white dark:border-white/10">
-                    @error('username') <p class="text-red-500 text-sm mt-1">{{ $message }}</p> @enderror
-                </div>
-
+                <template x-if="loginType === 'username'">
+                    <div>
+                        <label class="block mb-1 text-gray-700 dark:text-white/80">Username</label>
+                        <input type="text" name="username" value="{{ old('username') }}" autocomplete="username"
+                            class="w-full px-3 py-2 border rounded-lg bg-white dark:bg-slate-950 dark:text-white dark:border-white/10">
+                        @error('username') <p class="text-red-500 text-sm mt-1">{{ $message }}</p> @enderror
+                    </div>
+                </template>
                 {{-- Password --}}
                 <div>
                     <label class="block mb-1 text-gray-700 dark:text-white/80">Password</label>

@@ -48,7 +48,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
-Route::middleware(['auth', 'admin'])
+Route::middleware(['auth', 'admin','active'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
@@ -82,6 +82,13 @@ Route::middleware(['auth', 'admin'])
             ->name('teachers.courses.update');
         Route::post('/quill/upload', [\App\Http\Controllers\Admin\QuillUploadController::class, 'store'])
               ->name('quill.upload');
+        Route::patch('students/{student}/toggle-status', 
+                [\App\Http\Controllers\Admin\StudentController::class, 'toggleStatus']
+               )->name('students.toggle-status');
+        Route::patch('teachers/{teacher}/toggle-status', [TeacherController::class, 'toggleStatus'])
+              ->name('teachers.toggle-status');
+        Route::get('/analytics', [\App\Http\Controllers\Admin\AnalyticsController::class, 'index'])
+              ->name('analytics.index');
             
 });
 
@@ -89,7 +96,7 @@ Route::middleware(['auth', 'admin'])
 
 
 
-Route::middleware(['auth', 'role:student'])
+Route::middleware(['auth', 'role:student','active'])
     ->prefix('student')
     ->name('student.')
     ->group(function () {
@@ -131,7 +138,7 @@ Route::middleware(['auth', 'role:student'])
 
 use App\Http\Controllers\Teacher\SubmissionController;
 
-Route::middleware(['auth', 'role:teacher'])
+Route::middleware(['auth', 'role:teacher','active'])
     ->prefix('teacher')
     ->name('teacher.')
     ->group(function () {

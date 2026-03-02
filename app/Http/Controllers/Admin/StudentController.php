@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Division;
+use Illuminate\Validation\Rule;
 
 class StudentController extends Controller
 {
@@ -33,25 +34,32 @@ class StudentController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'division_id' => 'required|exists:divisions,id',
-            'name' => 'required|string|max:255',
-            'password' => 'required|min:6',
-            'email' => 'nullable|required_without:username|email|unique:users,email',
-            'username' => 'nullable|required_without:email|unique:users,username',
+            'division_id' => ['required','exists:divisions,id'],
+            'name' => ['required','string','max:255'],
+            'password' => ['required','min:6'],
+            'login_type' => ['required', Rule::in(['email','username'])],
+
+            'email' => [
+                'nullable','email','unique:users,email',
+                Rule::requiredIf(fn() => $request->login_type === 'email'),
+            ],
+            'username' => [
+                'nullable','unique:users,username',
+                Rule::requiredIf(fn() => $request->login_type === 'username'),
+            ],
         ]);
 
         User::create([
-            'division_id' => $request->division_id,   // ✅ add this
+            'division_id' => $request->division_id,
             'name' => $request->name,
-            'email' => $request->email ?: null,
-            'username' => $request->username ?: null,
+            'email' => $request->login_type === 'email' ? $request->email : null,
+            'username' => $request->login_type === 'username' ? $request->username : null,
             'password' => Hash::make($request->password),
             'plain_password' => $request->password,
             'role' => 'student',
         ]);
 
-        return redirect()->route('admin.students.index')
-            ->with('success', 'Student created successfully.');
+        return redirect()->route('admin.students.index')->with('success', 'Student created successfully.');
     }
 
     public function update(Request $request, User $student)
@@ -85,17 +93,28 @@ class StudentController extends Controller
         $student->delete();
         return back()->with('success', 'Student deleted successfully.');
     }
-public function create()
-{
-    $divisions = Division::orderBy('name')->get();
-    return view('admin.students.create', compact('divisions'));
-}
+    public function create()
+    {
+        $divisions = Division::orderBy('name')->get();
+        return view('admin.students.create', compact('divisions'));
+    }
 
-public function edit(User $student)
-{
-    // abort_if($student->role !== 'student', 404);
+    public function edit(User $student)
+    {
+        // abort_if($student->role !== 'student', 404);
 
-    $divisions = Division::orderBy('name')->get();
-    return view('admin.students.edit', compact('student', 'divisions'));
-}
+        $divisions = Division::orderBy('name')->get();
+        return view('admin.students.edit', compact('student', 'divisions'));
+    }
+    public function toggleStatus(User $student)
+    {
+        $student->is_active = !$student->is_active;
+        $student->save();
+
+        $message = $student->is_active
+            ? 'Student reactivated successfully.'
+            : 'Student suspended successfully.';
+
+        return back()->with('success', $message);
+    }
 }

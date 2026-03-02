@@ -11,11 +11,21 @@
                     Course: <span class="font-medium">{{ $course->title }}</span>
                 </p>
             </div>
+            <div class="flex items-center gap-2">
+                {{-- ✅ Back to Courses --}}
+                <a href="{{ route('admin.courses.index') }}"
+                    class="px-4 py-2 text-sm border border-gray-300 dark:border-white/10 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 dark:text-white">
+                    Back to Courses
+                </a>
 
-            <a href="{{ route('admin.courses.assignments.create', $course->id) }}"
-                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
-                + Add Assignment
-            </a>
+                {{-- Add Lesson --}}
+
+                <a href="{{ route('admin.courses.assignments.create', $course->id) }}"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
+                    + Add Assignment
+                </a>
+            </div>
+
         </div>
 
         @if(session('success'))
