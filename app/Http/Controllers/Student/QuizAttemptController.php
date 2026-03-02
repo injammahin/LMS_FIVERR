@@ -218,7 +218,7 @@ class QuizAttemptController extends Controller
                 // ✅ manual review later
                 if ($isManual) {
                     $isCorrect = null;
-                    $awarded = 0;
+                    $awarded = 0; 
                 }
 
                 QuizAttemptAnswer::updateOrCreate(
@@ -281,6 +281,25 @@ class QuizAttemptController extends Controller
                 if ($hasAnswer) $pendingReview++;
             }
         }
+        // manual answered count
+        $manualAnswered = 0;
+
+        foreach ($quiz->questions as $q) {
+            $ans = $answers->get($q->id);
+
+            if (in_array($q->type, ['true_false', 'single_choice', 'multiple_choice'])) {
+                $objectiveTotal += (int) $q->marks;
+                $objectiveScore += (int) ($ans?->awarded_marks ?? 0);
+            }
+
+            if (in_array($q->type, ['text', 'file'])) {
+                $hasAnswer = !empty($ans?->answer_json) || !empty($ans?->file_path);
+                if ($hasAnswer) $manualAnswered++;
+            }
+        }
+
+        // ✅ pending only if attempt not graded yet
+        $pendingReview = ($manualAnswered > 0 && $attempt->status !== 'graded') ? $manualAnswered : 0;
 
         return view('student.quiz_result', [
             'attempt' => $attempt,
