@@ -60,6 +60,8 @@ Route::middleware(['auth', 'admin','active'])
         Route::resource('students', \App\Http\Controllers\Admin\StudentController::class);
         Route::get('teachers/reports', [\App\Http\Controllers\Admin\TeacherController::class, 'reports'])
               ->name('teachers.reports');
+        Route::get('assignments/graded', [AssignmentController::class, 'graded'])
+        ->name('assignments.graded');
         Route::resource('teachers', \App\Http\Controllers\Admin\TeacherController::class);
 
         Route::resource('divisions', DivisionController::class);
