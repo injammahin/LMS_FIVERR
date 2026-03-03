@@ -51,6 +51,16 @@ class MenuHelper
                 ],
             ],
             [
+                'icon' => 'teachers',
+                'name' => 'Satffs',
+                'subItems' => [
+                    ['name' => 'All staffs', 'path' => '/admin/staffs'],
+                    ['name' => 'Add New staffs', 'path' => '/admin/staffs/create'],
+                    ['name' => 'staffs Reports', 'path' => '/admin/staffs/reports'],
+                    ['name' => 'Assign Courses', 'path' => '/admin/staffs'],
+                ],
+            ],
+            [
                 'icon' => 'analytics',
                 'name' => 'Analytics',
                 'path' => '/admin/analytics',

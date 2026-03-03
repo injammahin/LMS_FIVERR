@@ -38,4 +38,9 @@ class Course extends Model
         return $this->belongsToMany(\App\Models\User::class, 'course_teacher', 'course_id', 'teacher_id')
             ->withTimestamps();
     }
+    public function staffs()
+    {
+        return $this->belongsToMany(\App\Models\User::class, 'course_staff', 'course_id', 'staff_id')
+            ->withTimestamps();
+    }
 }

@@ -55,10 +55,6 @@ Route::middleware(['auth', 'admin','active'])
 
         Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])
            ->name('dashboard');
-
-        // Route::view('/courses', 'admin.courses.index')->name('courses.index');
-        // Route::view('/courses/create', 'admin.courses.create')->name('courses.create');
-
         Route::resource('students', \App\Http\Controllers\Admin\StudentController::class);
         Route::resource('teachers', \App\Http\Controllers\Admin\TeacherController::class);
         Route::resource('divisions', DivisionController::class);
@@ -77,7 +73,6 @@ Route::middleware(['auth', 'admin','active'])
             ->name('assignments.submissions.grade');
         Route::get('teachers/{teacher}/courses', [TeacherController::class, 'editCourses'])
             ->name('teachers.courses.edit');
-
         Route::post('teachers/{teacher}/courses', [TeacherController::class, 'updateCourses'])
             ->name('teachers.courses.update');
         Route::post('/quill/upload', [\App\Http\Controllers\Admin\QuillUploadController::class, 'store'])
@@ -89,6 +84,17 @@ Route::middleware(['auth', 'admin','active'])
               ->name('teachers.toggle-status');
         Route::get('/analytics', [\App\Http\Controllers\Admin\AnalyticsController::class, 'index'])
               ->name('analytics.index');
+        Route::resource('staffs', \App\Http\Controllers\Admin\StaffController::class);
+
+        Route::get('staffs/{staff}/courses', [\App\Http\Controllers\Admin\StaffController::class, 'editCourses'])
+            ->name('staffs.courses.edit');
+
+        Route::post('staffs/{staff}/courses', [\App\Http\Controllers\Admin\StaffController::class, 'updateCourses'])
+            ->name('staffs.courses.update');
+
+        // suspend/activate
+        Route::patch('staffs/{staff}/toggle-status', [\App\Http\Controllers\Admin\StaffController::class, 'toggleStatus'])
+            ->name('staffs.toggle-status');
             
 });
 
@@ -188,6 +194,35 @@ Route::middleware(['auth', 'role:staff'])
     ->prefix('staff')
     ->name('staff.')
     ->group(function () {
-        Route::view('/dashboard', 'staff.dashboard')->name('dashboard');
-    });
+
+        Route::get('/dashboard', [\App\Http\Controllers\Staff\DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/courses', [\App\Http\Controllers\Staff\CourseController::class, 'index'])->name('courses.index');
+        Route::get('/courses/{course}', [\App\Http\Controllers\Staff\CourseController::class, 'show'])->name('courses.show');
+
+        Route::get('/submissions', [\App\Http\Controllers\Staff\SubmissionController::class, 'index'])->name('submissions.index');
+        Route::get('/assignments/{assignment}/submissions/{submission}', [\App\Http\Controllers\Staff\SubmissionController::class, 'showAssignment'])->name('assignments.submissions.show');
+        Route::get('/quiz-attempts/{attempt}', [\App\Http\Controllers\Staff\SubmissionController::class, 'showAttempt'])->name('quiz.attempts.show');
+
+        Route::get('/courses', [\App\Http\Controllers\Staff\CourseController::class, 'index'])
+            ->name('courses.index');
+
+        Route::get('/courses/{course}', [\App\Http\Controllers\Staff\CourseController::class, 'show'])
+            ->name('courses.show');
+
+        // view submissions (NO grade routes here)
+        Route::get('/submissions', [\App\Http\Controllers\Staff\SubmissionController::class, 'index'])
+            ->name('submissions.index');
+
+        Route::get('/assignments/{assignment}/submissions/{submission}', [\App\Http\Controllers\Staff\SubmissionController::class, 'showAssignment'])
+            ->name('assignments.submissions.show');
+
+        Route::get('/quiz-attempts/{attempt}', [\App\Http\Controllers\Staff\SubmissionController::class, 'showAttempt'])
+            ->name('quiz.attempts.show');
+        Route::get('/courses/{course}/students/{student}', [\App\Http\Controllers\Staff\CourseController::class, 'studentProgress'])
+            ->name('courses.students.show');
+        Route::get('/courses/{course}/activity', [\App\Http\Controllers\Staff\CourseController::class, 'activity'])
+            ->name('courses.activity');
+            });
+
+
 require __DIR__.'/auth.php';
