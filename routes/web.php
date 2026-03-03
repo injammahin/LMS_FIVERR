@@ -55,8 +55,13 @@ Route::middleware(['auth', 'admin','active'])
 
         Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])
            ->name('dashboard');
+        Route::get('/students/reports', [\App\Http\Controllers\Admin\StudentController::class, 'reports'])
+              ->name('admin.students.reports');
         Route::resource('students', \App\Http\Controllers\Admin\StudentController::class);
+        Route::get('teachers/reports', [\App\Http\Controllers\Admin\TeacherController::class, 'reports'])
+              ->name('teachers.reports');
         Route::resource('teachers', \App\Http\Controllers\Admin\TeacherController::class);
+
         Route::resource('divisions', DivisionController::class);
         Route::resource('subjects', SubjectController::class);
         Route::resource('courses', CourseController::class);
@@ -84,6 +89,7 @@ Route::middleware(['auth', 'admin','active'])
               ->name('teachers.toggle-status');
         Route::get('/analytics', [\App\Http\Controllers\Admin\AnalyticsController::class, 'index'])
               ->name('analytics.index');
+        Route::get('staffs/reports', [\App\Http\Controllers\Admin\StaffController::class, 'reports'])->name('staffs.reports');
         Route::resource('staffs', \App\Http\Controllers\Admin\StaffController::class);
 
         Route::get('staffs/{staff}/courses', [\App\Http\Controllers\Admin\StaffController::class, 'editCourses'])

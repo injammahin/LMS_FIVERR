@@ -26,9 +26,8 @@ class MenuHelper
                 'icon' => 'assignments',
                 'name' => 'Assignments',
                 'subItems' => [
-                    ['name' => 'Manage Assignments', 'path' => '/admin/assignments'],
+                    // ['name' => 'Manage Assignments', 'path' => '/admin/assignments'],
                     ['name' => 'Graded Assignments', 'path' => '/admin/assignments/graded'],
-                    ['name' => 'Assignment Templates', 'path' => '/admin/assignments/templates'],
                 ],
             ],
             [

@@ -67,5 +67,15 @@ class User extends Authenticatable
         return $this->belongsToMany(\App\Models\Course::class, 'course_staff', 'staff_id', 'course_id')
             ->withTimestamps();
     }
+    public function quizAttempts()
+    {
+        return $this->hasMany(\App\Models\QuizAttempt::class, 'user_id');
+    }
+
+    public function assignmentSubmissions()
+    {
+        return $this->hasMany(\App\Models\AssignmentSubmission::class, 'user_id');
+    }
+
     
 }
