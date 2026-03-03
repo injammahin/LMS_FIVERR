@@ -36,7 +36,7 @@ class MenuHelper
                 'subItems' => [
                     ['name' => 'All Students', 'path' => '/admin/students'],
                     ['name' => 'Add New Student', 'path' => '/admin/students/create'],
-                    ['name' => 'Student Reports', 'path' => '/admin/students/reports'],
+                    // ['name' => 'Student Reports', 'path' => '/admin/students/reports'],
                 ],
             ],
             [
@@ -45,7 +45,7 @@ class MenuHelper
                 'subItems' => [
                     ['name' => 'All Teachers', 'path' => '/admin/teachers'],
                     ['name' => 'Add New Teacher', 'path' => '/admin/teachers/create'],
-                    ['name' => 'Teacher Reports', 'path' => '/admin/teachers/reports'],
+                    // ['name' => 'Teacher Reports', 'path' => '/admin/teachers/reports'],
                     ['name' => 'Assign Courses', 'path' => '/admin/teachers'],
                 ],
             ],
@@ -55,7 +55,7 @@ class MenuHelper
                 'subItems' => [
                     ['name' => 'All staffs', 'path' => '/admin/staffs'],
                     ['name' => 'Add New staffs', 'path' => '/admin/staffs/create'],
-                    ['name' => 'staffs Reports', 'path' => '/admin/staffs/reports'],
+                    // ['name' => 'staffs Reports', 'path' => '/admin/staffs/reports'],
                     ['name' => 'Assign Courses', 'path' => '/admin/staffs'],
                 ],
             ],
@@ -68,10 +68,10 @@ class MenuHelper
                 'icon' => 'reports',
                 'name' => 'Reports',
                 'subItems' => [
-                    ['name' => 'Course Reports', 'path' => '/admin/reports/courses'],
-                    ['name' => 'Student Reports', 'path' => '/admin/reports/students'],
-                    ['name' => 'Teacher Reports', 'path' => '/admin/reports/teachers'],
-                    ['name' => 'Assignments Reports', 'path' => '/admin/reports/assignments'],
+                    ['name' => 'Student Reports', 'path' => '/admin/students/reports'],
+                    ['name' => 'Teacher Reports', 'path' => '/admin/teachers/reports'],
+                    ['name' => 'staffs Reports', 'path' => '/admin/staffs/reports'],
+
                 ],
             ],
         ];
