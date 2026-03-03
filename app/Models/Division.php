@@ -10,6 +10,9 @@ class Division extends Model
         'name',
         'slug',
         'image',
+        'level',
+        'promotion_percent',
+        'auto_promote',
     ];
     public function subjects()
     {

@@ -25,6 +25,8 @@ class DivisionController extends Controller
     {
         $validated = $request->validate([
             'name'  => ['required', 'string', 'max:255'],
+            'level' => ['required', 'integer', 'min:1'],
+            'promotion_percent' => ['required', 'integer', 'min:1', 'max:100'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
 
@@ -46,6 +48,8 @@ class DivisionController extends Controller
             'name'  => $validated['name'],
             'slug'  => $slug,
             'image' => $imagePath,
+            'level' => $validated['level'],
+            'promotion_percent' => $validated['promotion_percent'],
         ]);
 
         return redirect()
@@ -58,39 +62,50 @@ class DivisionController extends Controller
         return view('admin.divisions.edit', compact('division'));
     }
 
-    public function update(Request $request, \App\Models\Division $division)
+    public function update(Request $request, Division $division)
     {
         $validated = $request->validate([
             'name'  => ['required', 'string', 'max:255'],
+            'level' => ['required', 'integer', 'min:1'],
+            'promotion_percent' => ['required', 'integer', 'min:1', 'max:100'],
+            'auto_promote' => ['nullable', 'boolean'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'remove_image' => ['nullable', 'boolean'],
         ]);
 
-        $slug = \Illuminate\Support\Str::slug($validated['name']);
-
-        // ensure unique slug (ignore current division)
+        // Generate unique slug
+        $slug = Str::slug($validated['name']);
         $baseSlug = $slug;
         $i = 1;
-        while (\App\Models\Division::where('slug', $slug)->where('id', '!=', $division->id)->exists()) {
+
+        while (Division::where('slug', $slug)
+            ->where('id', '!=', $division->id)
+            ->exists()) {
             $slug = $baseSlug . '-' . $i++;
         }
 
-        // remove old image if requested
+        // Remove image
         if ($request->boolean('remove_image') && $division->image) {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete($division->image);
+            Storage::disk('public')->delete($division->image);
             $division->image = null;
         }
 
-        // new image upload
+        // Upload new image
         if ($request->hasFile('image')) {
             if ($division->image) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($division->image);
+                Storage::disk('public')->delete($division->image);
             }
-            $division->image = $request->file('image')->store('divisions', 'public');
+
+            $division->image = $request->file('image')
+                ->store('divisions', 'public');
         }
 
+        // Update fields
         $division->name = $validated['name'];
         $division->slug = $slug;
+        $division->level = $validated['level'];
+        $division->promotion_percent = $validated['promotion_percent'];
+        $division->auto_promote = $request->boolean('auto_promote');
         $division->save();
 
         return redirect()

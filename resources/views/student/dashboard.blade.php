@@ -83,7 +83,8 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="divisionGrid">
             @foreach($divisions as $division)
                 @php
-                    $isAllowed = (int)$user->division_id === (int)$division->id;
+                     $userDivision = $assignedDivision;
+                    $isAllowed = $userDivision && $division->level <= $userDivision->level; 
 
                     $imageUrl = $division->image ? asset('storage/'.$division->image) : null;
 
@@ -93,6 +94,7 @@
                     // real counts
                     $subjectsCount = (int)($division->subjects_count ?? 0);
                     $coursesCount  = (int)($division->courses_count ?? 0);
+                    $progress = $divisionProgress[$division->id] ?? ['percent'=>0,'done'=>0,'total'=>0];
                 @endphp
 
                 {{-- Card wrapper (search uses this text) --}}
@@ -115,7 +117,13 @@
                                 {{-- Top badges --}}
                                 <div class="absolute top-4 left-4 flex gap-2">
                                     <span class="px-3 py-1 rounded-full text-xs font-medium bg-white/15 text-white border border-white/20 backdrop-blur">
-                                        Access: Granted
+                                       @if($division->level == $userDivision?->level)
+                                            Access: Current Level
+                                        @elseif($division->level < $userDivision?->level)
+                                            Access: Previous Level
+                                        @else
+                                            Access: Locked
+                                        @endif
                                     </span>
                                 </div>
 
@@ -129,28 +137,95 @@
                                     </div>
                                 </div>
                             </div>
-
                             {{-- Info Bar --}}
-                            <div class="p-5 flex items-center justify-between">
-                                <div class="flex items-center gap-4 text-sm text-gray-600 dark:text-white/70">
-                                    <span class="inline-flex items-center gap-1">
-                                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                                        Subjects: <b class="text-gray-900 dark:text-white">{{ $subjectsCount }}</b>
-                                    </span>
-                                    <span class="inline-flex items-center gap-1">
-                                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                                        Courses: <b class="text-gray-900 dark:text-white">{{ $coursesCount }}</b>
+                            <div class="p-5 space-y-4">
+
+                                {{-- Top Row --}}
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-4 text-sm text-gray-600 dark:text-white/70">
+                                        <span class="inline-flex items-center gap-1">
+                                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                            Subjects: <b class="text-gray-900 dark:text-white">{{ $subjectsCount }}</b>
+                                        </span>
+                                        <span class="inline-flex items-center gap-1">
+                                            <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                                            Courses: <b class="text-gray-900 dark:text-white">{{ $coursesCount }}</b>
+                                        </span>
+                                    </div>
+
+                                    {{-- Donut Progress --}}
+                                    <div class="relative w-14 h-14">
+                                        <svg class="w-14 h-14 transform -rotate-90">
+                                            <circle cx="28" cy="28" r="24"
+                                                    stroke="#e5e7eb"
+                                                    stroke-width="5"
+                                                    fill="transparent" />
+
+                                            <circle cx="28" cy="28" r="24"
+                                                    stroke="#10b981"
+                                                    stroke-width="5"
+                                                    fill="transparent"
+                                                    stroke-dasharray="150"
+                                                    stroke-dashoffset="{{ 150 - (150 * $progress['percent'] / 100) }}"
+                                                    stroke-linecap="round"
+                                                    class="transition-all duration-700" />
+                                        </svg>
+
+                                        <div class="absolute inset-0 flex items-center justify-center">
+                                            <span class="text-xs font-bold text-gray-800 dark:text-white">
+                                                {{ $progress['percent'] }}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Animated Progress Bar --}}
+                                <div>
+                                    <div class="relative h-3 bg-gray-100 dark:bg-white/10 rounded-full overflow-hidden">
+                                        <div class="h-3 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600 transition-all duration-700"
+                                            style="width: {{ $progress['percent'] }}%">
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center justify-between mt-1 text-xs">
+                                        <span class="text-gray-500 dark:text-white/60">
+                                            {{ $progress['done'] }} of {{ $progress['total'] }} completed
+                                        </span>
+
+                                        @if($isAllowed && $division->auto_promote)
+                                            <span class="text-blue-600 font-medium">
+                                                Promotion at {{ $division->promotion_percent }}%
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                {{-- Promotion Status Indicator --}}
+                                @if($isAllowed && $division->auto_promote)
+                                    @if($progress['percent'] >= $division->promotion_percent)
+                                        <div class="px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
+                                            🎉 Eligible for Promotion!
+                                        </div>
+                                    @else
+                                        <div class="px-3 py-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-xs">
+                                            {{ $division->promotion_percent - $progress['percent'] }}% left to unlock next level
+                                        </div>
+                                    @endif
+                                @endif
+
+                                {{-- Continue Button --}}
+                                <div class="flex justify-end">
+                                    <span class="inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                                        Continue
+                                        <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd"
+                                                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                                clip-rule="evenodd" />
+                                        </svg>
                                     </span>
                                 </div>
 
-                                <span class="inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
-                                    Continue
-                                    <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                                    </svg>
-                                </span>
                             </div>
-
                             {{-- Glow ring on hover --}}
                             <div class="pointer-events-none absolute inset-0 rounded-3xl ring-0 ring-emerald-400/0 group-hover:ring-4 group-hover:ring-emerald-400/25 transition"></div>
                         </a>

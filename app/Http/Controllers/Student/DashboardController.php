@@ -13,52 +13,131 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
 
-        // ✅ Real counts (no dummy)
-        // Count subjects and courses for user's assigned division only
+        // 🔥 STEP 1: Check promotion FIRST
+        $this->checkAutoPromotion($user);
+        $user->refresh(); // VERY IMPORTANT
+
+        // 🔥 STEP 2: Load assigned division AFTER promotion
         $assignedDivision = null;
         $assignedSubjectsCount = 0;
         $assignedCoursesCount = 0;
 
         if ($user->division_id) {
-            $assignedDivision = Division::withCount('subjects')->find($user->division_id);
+            $assignedDivision = Division::withCount('subjects')
+                ->find($user->division_id);
 
             if ($assignedDivision) {
                 $assignedSubjectsCount = (int) $assignedDivision->subjects_count;
 
-                // courses count under this division through subjects -> courses
                 $assignedCoursesCount = \App\Models\Course::whereHas('subject', function ($q) use ($user) {
                     $q->where('division_id', $user->division_id);
                 })->count();
             }
         }
 
-        // ✅ Divisions list with real counts
-        // subjects_count is real
-        // courses_count is real using withCount with nested relationship
+        // 🔥 STEP 3: Load divisions
         $divisions = Division::query()
             ->withCount([
                 'subjects',
-                // courses via subjects
                 'subjects as courses_count' => function ($q) {
                     $q->join('courses', 'courses.subject_id', '=', 'subjects.id');
                 }
             ])
-            ->orderBy('name')
+            ->orderBy('level')
             ->get();
+
+        // 🔥 STEP 4: Calculate progress AFTER promotion
+        $divisionProgress = [];
+
+        foreach ($divisions as $division) {
+            $divisionProgress[$division->id] =
+                $this->calculateDivisionProgress($user, $division);
+        }
 
         return view('student.dashboard', compact(
             'user',
             'divisions',
             'assignedDivision',
             'assignedSubjectsCount',
-            'assignedCoursesCount'
+            'assignedCoursesCount',
+            'divisionProgress'
         ));
     }
+    private function checkAutoPromotion($user)
+    {
+        $currentDivision = Division::find($user->division_id);
+        if (!$currentDivision || !$currentDivision->auto_promote) return;
 
-  public function division(Division $division)
+        // calculate completion %
+        $stats = $this->calculateDivisionProgress($user, $currentDivision);
+
+        if ($stats['percent'] >= $currentDivision->promotion_percent) {
+
+            // find next level division
+            $nextDivision = Division::where('level', '>', $currentDivision->level)
+                ->orderBy('level')
+                ->first();
+
+            if ($nextDivision) {
+                $user->division_id = $nextDivision->id;
+                $user->save();
+            }
+        }
+    }
+    private function calculateDivisionProgress($user, Division $division)
+    {
+        $lessonIds = [];
+        $quizIds = [];
+        $assignmentIds = [];
+
+        $subjects = $division->subjects()
+            ->with('courses.lessons', 'courses.quizzes', 'courses.assignments')
+            ->get();
+
+        foreach ($subjects as $sub) {
+            foreach ($sub->courses as $c) {
+                foreach ($c->lessons as $l) $lessonIds[] = $l->id;
+                foreach ($c->quizzes as $qz) $quizIds[] = $qz->id;
+                foreach ($c->assignments as $a) $assignmentIds[] = $a->id;
+            }
+        }
+
+        $lessonDone = LessonProgress::where('user_id', $user->id)
+            ->whereIn('lesson_id', $lessonIds)
+            ->whereNotNull('completed_at')
+            ->count();
+
+        $quizDone = QuizAttempt::where('user_id', $user->id)
+            ->whereIn('quiz_id', $quizIds)
+            ->whereNotNull('submitted_at')
+            ->distinct('quiz_id')
+            ->count('quiz_id');
+
+        $assignmentDone = AssignmentSubmission::where('user_id', $user->id)
+            ->whereIn('assignment_id', $assignmentIds)
+            ->distinct('assignment_id')
+            ->count('assignment_id');
+
+        $total = count($lessonIds) + count($quizIds) + count($assignmentIds);
+        $done = $lessonDone + $quizDone + $assignmentDone;
+
+        $percent = $total > 0 ? round(($done / $total) * 100) : 0;
+
+        return [
+            'total' => $total,
+            'done' => $done,
+            'percent' => $percent,
+        ];
+    }
+    public function division(Division $division)
     {
         $user = auth()->user();
-        abort_if((int)$user->division_id !== (int)$division->id, 403);
+        $userDivision = Division::find($user->division_id);
+
+        abort_if(!$userDivision, 403);
+
+        // allow access if requested division level <= user level
+        abort_if($division->level > $userDivision->level, 403);
 
         // Load subjects + courses + items (for cards + activity boxes)
         $subjects = $division->subjects()

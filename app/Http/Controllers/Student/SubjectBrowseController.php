@@ -16,7 +16,12 @@ class SubjectBrowseController extends Controller
         $user = auth()->user();
 
         // Must be assigned division
-        abort_if((int)$user->division_id !== (int)$division->id, 403);
+        $userDivision = Division::find($user->division_id);
+
+        abort_if(!$userDivision, 403);
+
+        // allow access if requested division level <= user level
+        abort_if($division->level > $userDivision->level, 403);
 
         // Subject must belong to this division
         abort_if((int)$subject->division_id !== (int)$division->id, 404);
