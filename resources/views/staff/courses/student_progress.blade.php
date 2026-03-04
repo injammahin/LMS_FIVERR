@@ -62,16 +62,20 @@
     <div class="space-y-6" x-data="{ open: { lessons:true, quizzes:true, assignments:true } }">
 
         {{-- HERO --}}
-        <div class="rounded-3xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+        <div
+            class="rounded-3xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
             <div class="h-20 bg-gradient-to-r from-indigo-700 via-blue-700 to-sky-700 relative">
-                <div class="absolute inset-0 opacity-15 bg-[radial-gradient(circle_at_30%_30%,white,transparent_45%)]"></div>
-                <div class="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_70%_70%,white,transparent_45%)]"></div>
+                <div class="absolute inset-0 opacity-15 bg-[radial-gradient(circle_at_30%_30%,white,transparent_45%)]">
+                </div>
+                <div class="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_70%_70%,white,transparent_45%)]">
+                </div>
             </div>
 
-            <div class="p-5 md:p-6 -mt-8">
+            <div class="p-5 md:p-6 mt-8">
                 <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                     <div class="flex items-start gap-4 min-w-0">
-                        <div class="w-14 h-14 rounded-2xl bg-white/95 dark:bg-slate-950 border border-white/50 dark:border-white/10 shadow grid place-items-center">
+                        <div
+                            class="w-14 h-14 rounded-2xl bg-white/95 dark:bg-slate-950 border border-white/50 dark:border-white/10 shadow grid place-items-center">
                             <span class="text-lg font-extrabold text-indigo-700 dark:text-indigo-300">
                                 {{ strtoupper(substr($student->name ?? 'S', 0, 1)) }}
                             </span>
@@ -79,7 +83,8 @@
 
                         <div class="min-w-0">
                             <div class="text-xs text-gray-500 dark:text-white/60">Student progress</div>
-                            <div class="text-lg font-semibold text-gray-900 dark:text-white truncate">{{ $student->name }}</div>
+                            <div class="text-lg font-semibold text-gray-900 dark:text-white truncate">{{ $student->name }}
+                            </div>
                             <div class="text-xs text-gray-500 dark:text-white/60 mt-1 truncate">
                                 {{ $student->username ?? $student->email ?? '-' }}
                                 @if($lastActive)
@@ -88,19 +93,23 @@
                             </div>
 
                             <div class="mt-3 flex flex-wrap gap-2">
-                                <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs {{ $chip('gray') }}">
+                                <span
+                                    class="inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs {{ $chip('gray') }}">
                                     <i class="fa-solid fa-book-open text-[11px]"></i>
                                     {{ $course->title }}
                                 </span>
-                                <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs {{ $chip('blue') }}">
+                                <span
+                                    class="inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs {{ $chip('blue') }}">
                                     <i class="fa-solid fa-tag text-[11px]"></i>
                                     {{ $subjectName }}
                                 </span>
-                                <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs {{ $chip('emerald') }}">
+                                <span
+                                    class="inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs {{ $chip('emerald') }}">
                                     <i class="fa-solid fa-sitemap text-[11px]"></i>
                                     {{ $divisionName }}
                                 </span>
-                                <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs {{ $chip('amber') }}">
+                                <span
+                                    class="inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs {{ $chip('amber') }}">
                                     <i class="fa-solid fa-eye text-[11px]"></i>
                                     View-only staff
                                 </span>
@@ -110,12 +119,12 @@
 
                     <div class="flex flex-wrap gap-2">
                         <a href="{{ route('staff.courses.show', $course->id) }}"
-                           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-950 hover:bg-gray-50 dark:hover:bg-white/5 text-sm">
+                            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-950 hover:bg-gray-50 dark:hover:bg-white/5 text-sm">
                             <i class="fa-solid fa-arrow-left"></i> Back to Course
                         </a>
 
                         <a href="{{ route('staff.courses.activity', $course->id) }}"
-                           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-900 text-white hover:bg-gray-800 text-sm shadow-sm">
+                            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-900 text-white hover:bg-gray-800 text-sm shadow-sm">
                             <i class="fa-solid fa-chart-simple"></i> Course Activity
                         </a>
                     </div>
@@ -161,8 +170,10 @@
                                 <div class="kpiValue">{{ $overallPercent }}%</div>
                                 <div class="kpiSub">{{ $doneItems }} / {{ $totalItems }} items</div>
                             </div>
-                            <div class="donut border border-gray-200 dark:border-white/10" style="{{ $donutStyle($overallPercent, '#10b981') }}">
-                                <span class="text-[11px] font-extrabold text-gray-900 dark:text-white">{{ $overallPercent }}%</span>
+                            <div class="donut border border-gray-200 dark:border-white/10"
+                                style="{{ $donutStyle($overallPercent, '#10b981') }}">
+                                <span
+                                    class="text-[11px] font-extrabold text-gray-900 dark:text-white">{{ $overallPercent }}%</span>
                             </div>
                         </div>
                     </div>
@@ -173,7 +184,8 @@
                     <div class="flex items-start justify-between gap-3">
                         <div>
                             <div class="text-sm font-semibold text-gray-900 dark:text-white">Completion Graph</div>
-                            <div class="text-xs text-gray-500 dark:text-white/60 mt-1">Lessons vs Quizzes vs Assignments</div>
+                            <div class="text-xs text-gray-500 dark:text-white/60 mt-1">Lessons vs Quizzes vs Assignments
+                            </div>
                         </div>
                         <span class="text-xs px-3 py-1 rounded-full border {{ $chip('gray') }}">
                             {{ $overallPercent }}% overall
@@ -200,7 +212,8 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="pill {{ $chip('gray') }}">{{ $lessonDone }}/{{ $lessonTotal }}</span>
-                    <i class="fa-solid fa-chevron-down text-gray-400 transition" :class="open.lessons ? 'rotate-180' : ''"></i>
+                    <i class="fa-solid fa-chevron-down text-gray-400 transition"
+                        :class="open.lessons ? 'rotate-180' : ''"></i>
                 </div>
             </button>
 
@@ -246,7 +259,8 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="pill {{ $chip('gray') }}">{{ $quizSubmitted }}/{{ $quizTotal }}</span>
-                    <i class="fa-solid fa-chevron-down text-gray-400 transition" :class="open.quizzes ? 'rotate-180' : ''"></i>
+                    <i class="fa-solid fa-chevron-down text-gray-400 transition"
+                        :class="open.quizzes ? 'rotate-180' : ''"></i>
                 </div>
             </button>
 
@@ -299,7 +313,8 @@
                             <div class="text-xs text-gray-500 dark:text-white/60 mt-1">
                                 Attempts: <span class="font-semibold text-gray-900 dark:text-white">{{ $attemptText }}</span>
                                 @if($scoreText)
-                                    • Latest score: <span class="font-semibold text-gray-900 dark:text-white">{{ $scoreText }}</span>
+                                    • Latest score: <span
+                                        class="font-semibold text-gray-900 dark:text-white">{{ $scoreText }}</span>
                                 @endif
                             </div>
                         </div>
@@ -308,7 +323,7 @@
                             <span class="pill {{ $chip($badgeTone) }}">{{ $badgeText }}</span>
 
                             <a href="{{ $openUrl }}"
-                               class="px-3 py-1.5 rounded-xl text-xs font-semibold border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-950 hover:bg-gray-50 dark:hover:bg-white/5">
+                                class="px-3 py-1.5 rounded-xl text-xs font-semibold border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-950 hover:bg-gray-50 dark:hover:bg-white/5">
                                 View
                             </a>
                         </div>
@@ -331,7 +346,8 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="pill {{ $chip('gray') }}">{{ $assSubmitted }}/{{ $assTotal }}</span>
-                    <i class="fa-solid fa-chevron-down text-gray-400 transition" :class="open.assignments ? 'rotate-180' : ''"></i>
+                    <i class="fa-solid fa-chevron-down text-gray-400 transition"
+                        :class="open.assignments ? 'rotate-180' : ''"></i>
                 </div>
             </button>
 
@@ -369,7 +385,8 @@
 
                     <div class="p-4 flex items-center justify-between gap-4">
                         <div class="min-w-0">
-                            <div class="text-sm font-semibold text-gray-900 dark:text-white truncate">{{ $assignment->title }}</div>
+                            <div class="text-sm font-semibold text-gray-900 dark:text-white truncate">{{ $assignment->title }}
+                            </div>
                             <div class="text-xs text-gray-500 dark:text-white/60 mt-1">
                                 Submissions: <span class="font-semibold text-gray-900 dark:text-white">{{ $used }}</span>
                                 @if($marksText)
@@ -382,7 +399,7 @@
                             <span class="pill {{ $chip($badgeTone) }}">{{ $badgeText }}</span>
 
                             <a href="{{ $openUrl }}"
-                               class="px-3 py-1.5 rounded-xl text-xs font-semibold border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-950 hover:bg-gray-50 dark:hover:bg-white/5">
+                                class="px-3 py-1.5 rounded-xl text-xs font-semibold border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-950 hover:bg-gray-50 dark:hover:bg-white/5">
                                 View
                             </a>
                         </div>
@@ -400,63 +417,199 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
     <script>
-    (function(){
-        const ctx = document.getElementById('progressBar');
-        if(!ctx) return;
+        (function () {
+            const ctx = document.getElementById('progressBar');
+            if (!ctx) return;
 
-        const labels = ['Lessons','Quizzes','Assignments'];
-        const values = [@json($lessonPct), @json($quizPct), @json($assPct)];
+            const labels = ['Lessons', 'Quizzes', 'Assignments'];
+            const values = [@json($lessonPct), @json($quizPct), @json($assPct)];
 
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels,
-                datasets: [{
-                    label: 'Completion %',
-                    data: values,
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false }},
-                scales: {
-                    y: { beginAtZero: true, max: 100 },
-                    x: { grid: { display: false } }
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Completion %',
+                        data: values,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, max: 100 },
+                        x: { grid: { display: false } }
+                    }
                 }
-            }
-        });
-    })();
+            });
+        })();
     </script>
 
     <style>
         /* Premium components */
-        .kpiCard{border-radius:16px;border:1px solid rgba(229,231,235,1);background:#fff;padding:16px;box-shadow:0 10px 24px rgba(0,0,0,.05);overflow:hidden}
-        .dark .kpiCard{border-color:rgba(255,255,255,.10);background:rgb(15 23 42);box-shadow:0 10px 24px rgba(0,0,0,.25)}
-        .kpiTop{display:flex;align-items:center;gap:10px}
-        .kpiIcon{width:40px;height:40px;border-radius:14px;display:grid;place-items:center;border:1px solid}
-        .kpiLabel{font-size:12px;color:rgba(107,114,128,1);font-weight:700}
-        .dark .kpiLabel{color:rgba(255,255,255,.60)}
-        .kpiValue{font-size:18px;font-weight:900;color:#111827;margin-top:10px;line-height:1}
-        .dark .kpiValue{color:rgba(255,255,255,.92)}
-        .kpiSub{font-size:12px;color:rgba(107,114,128,1);margin-top:8px}
-        .dark .kpiSub{color:rgba(255,255,255,.55)}
+        .kpiCard {
+            border-radius: 16px;
+            border: 1px solid rgba(229, 231, 235, 1);
+            background: #fff;
+            padding: 16px;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, .05);
+            overflow: hidden
+        }
 
-        .donut{width:64px;height:64px;border-radius:999px;display:grid;place-items:center;position:relative}
-        .donut::before{content:"";position:absolute;inset:9px;border-radius:999px;background:rgba(255,255,255,.95);box-shadow:inset 0 0 0 1px rgba(229,231,235,1)}
-        .dark .donut::before{background:rgba(15,23,42,.95);box-shadow:inset 0 0 0 1px rgba(255,255,255,.10)}
-        .donut>span{position:relative}
+        .dark .kpiCard {
+            border-color: rgba(255, 255, 255, .10);
+            background: rgb(15 23 42);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, .25)
+        }
 
-        .sectionCard{border-radius:18px;border:1px solid rgba(229,231,235,1);background:#fff;box-shadow:0 10px 24px rgba(0,0,0,.05);overflow:hidden}
-        .dark .sectionCard{border-color:rgba(255,255,255,.10);background:rgb(15 23 42);box-shadow:0 10px 24px rgba(0,0,0,.25)}
-        .sectionHead{width:100%;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:16px;border-bottom:1px solid rgba(229,231,235,1);background:linear-gradient(to bottom, rgba(249,250,251,1), rgba(255,255,255,1))}
-        .dark .sectionHead{border-bottom-color:rgba(255,255,255,.10);background:linear-gradient(to bottom, rgba(255,255,255,.05), rgb(15 23 42))}
-        .sectionTitle{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:900;color:#111827}
-        .dark .sectionTitle{color:rgba(255,255,255,.95)}
-        .sectionSub{font-size:12px;color:rgba(107,114,128,1);margin-top:4px}
-        .dark .sectionSub{color:rgba(255,255,255,.55)}
-        .iconDot{width:34px;height:34px;border-radius:14px;display:grid;place-items:center;border:1px solid}
-        .pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;padding:6px 10px;border-radius:999px;border:1px solid;font-weight:800;white-space:nowrap}
+        .kpiTop {
+            display: flex;
+            align-items: center;
+            gap: 10px
+        }
+
+        .kpiIcon {
+            width: 40px;
+            height: 40px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            border: 1px solid
+        }
+
+        .kpiLabel {
+            font-size: 12px;
+            color: rgba(107, 114, 128, 1);
+            font-weight: 700
+        }
+
+        .dark .kpiLabel {
+            color: rgba(255, 255, 255, .60)
+        }
+
+        .kpiValue {
+            font-size: 18px;
+            font-weight: 900;
+            color: #111827;
+            margin-top: 10px;
+            line-height: 1
+        }
+
+        .dark .kpiValue {
+            color: rgba(255, 255, 255, .92)
+        }
+
+        .kpiSub {
+            font-size: 12px;
+            color: rgba(107, 114, 128, 1);
+            margin-top: 8px
+        }
+
+        .dark .kpiSub {
+            color: rgba(255, 255, 255, .55)
+        }
+
+        .donut {
+            width: 64px;
+            height: 64px;
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+            position: relative
+        }
+
+        .donut::before {
+            content: "";
+            position: absolute;
+            inset: 9px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, .95);
+            box-shadow: inset 0 0 0 1px rgba(229, 231, 235, 1)
+        }
+
+        .dark .donut::before {
+            background: rgba(15, 23, 42, .95);
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .10)
+        }
+
+        .donut>span {
+            position: relative
+        }
+
+        .sectionCard {
+            border-radius: 18px;
+            border: 1px solid rgba(229, 231, 235, 1);
+            background: #fff;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, .05);
+            overflow: hidden
+        }
+
+        .dark .sectionCard {
+            border-color: rgba(255, 255, 255, .10);
+            background: rgb(15 23 42);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, .25)
+        }
+
+        .sectionHead {
+            width: 100%;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 16px;
+            border-bottom: 1px solid rgba(229, 231, 235, 1);
+            background: linear-gradient(to bottom, rgba(249, 250, 251, 1), rgba(255, 255, 255, 1))
+        }
+
+        .dark .sectionHead {
+            border-bottom-color: rgba(255, 255, 255, .10);
+            background: linear-gradient(to bottom, rgba(255, 255, 255, .05), rgb(15 23 42))
+        }
+
+        .sectionTitle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 900;
+            color: #111827
+        }
+
+        .dark .sectionTitle {
+            color: rgba(255, 255, 255, .95)
+        }
+
+        .sectionSub {
+            font-size: 12px;
+            color: rgba(107, 114, 128, 1);
+            margin-top: 4px
+        }
+
+        .dark .sectionSub {
+            color: rgba(255, 255, 255, .55)
+        }
+
+        .iconDot {
+            width: 34px;
+            height: 34px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            border: 1px solid
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid;
+            font-weight: 800;
+            white-space: nowrap
+        }
     </style>
 @endsection

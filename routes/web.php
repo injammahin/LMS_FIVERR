@@ -230,7 +230,12 @@ Route::middleware(['auth', 'role:staff'])
             ->name('courses.students.show');
         Route::get('/courses/{course}/activity', [\App\Http\Controllers\Staff\CourseController::class, 'activity'])
             ->name('courses.activity');
+        Route::get('/quiz-attempts/{attempt}/pdf', [\App\Http\Controllers\Staff\SubmissionController::class, 'downloadAttemptPdf'])
+           ->name('quiz.attempts.pdf');
+        Route::get('/assignments/{assignment}/submissions/{submission}/pdf', [\App\Http\Controllers\Staff\SubmissionController::class, 'downloadAssignmentPdf'])
+           ->name('assignments.submissions.pdf');
             });
+
 
 
 require __DIR__.'/auth.php';

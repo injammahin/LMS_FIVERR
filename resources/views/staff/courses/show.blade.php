@@ -20,7 +20,7 @@
                 </div>
             </div>
 
-            <div class="p-5 md:p-6 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 -mt-6">
+            <div class="p-5 md:p-6 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mt-6">
                 <div class="flex items-start gap-4">
                     <div
                         class="w-12 h-12 rounded-2xl bg-white/90 dark:bg-slate-950 border border-white/40 dark:border-white/10 shadow grid place-items-center text-indigo-700 dark:text-indigo-300">

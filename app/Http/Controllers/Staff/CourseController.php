@@ -231,4 +231,53 @@ class CourseController extends Controller
             'assignmentSubs'
         ));
     }
+      public function activity(Request $request, Course $course)
+    {
+        $staff = auth()->user();
+        abort_if(!$staff->coursesSupporting()->where('courses.id', $course->id)->exists(), 403);
+
+        $tab = $request->get('tab', 'quizzes');
+        if (!in_array($tab, ['quizzes', 'assignments'], true)) $tab = 'quizzes';
+
+        $quizId = $request->get('quiz_id');
+        $assignmentId = $request->get('assignment_id');
+
+        $quizAttempts = null;
+        $assignmentSubs = null;
+
+        if ($tab === 'quizzes') {
+            $quizAttempts = QuizAttempt::query()
+                ->with(['user', 'quiz'])
+                ->whereHas('quiz', fn ($q) => $q->where('course_id', $course->id))
+                ->when($quizId, fn ($q) => $q->where('quiz_id', $quizId))
+                ->orderByDesc('submitted_at')
+                ->paginate(15)
+                ->appends($request->query());
+        }
+
+        if ($tab === 'assignments') {
+            $assignmentSubs = AssignmentSubmission::query()
+                ->with(['user', 'assignment'])
+                ->whereHas('assignment', fn ($q) => $q->where('course_id', $course->id))
+                ->when($assignmentId, fn ($q) => $q->where('assignment_id', $assignmentId))
+                ->orderByDesc('updated_at')
+                ->paginate(15)
+                ->appends($request->query());
+        }
+
+        // For dropdown filters on the page
+        $quizzes = $course->quizzes()->select('id', 'title')->orderBy('title')->get();
+        $assignments = $course->assignments()->select('id', 'title')->orderBy('title')->get();
+
+        return view('staff.courses.activity', compact(
+            'course',
+            'tab',
+            'quizId',
+            'assignmentId',
+            'quizAttempts',
+            'assignmentSubs',
+            'quizzes',
+            'assignments'
+        ));
+    }
 }
