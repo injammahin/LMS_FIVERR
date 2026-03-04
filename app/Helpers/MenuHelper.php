@@ -78,27 +78,27 @@ class MenuHelper
     }
 
     // LMS User Management Items
-    public static function getUserManagementItems()
-    {
-        return [
-            [
-                'icon' => 'users',
-                'name' => 'User Management',
-                'subItems' => [
-                    ['name' => 'View Users', 'path' => '/admin/user-management'],
-                    ['name' => 'Roles and Permissions', 'path' => '/admin/user-management/roles'],
-                ],
-            ],
-            [
-                'icon' => 'settings',
-                'name' => 'Settings',
-                'subItems' => [
-                    ['name' => 'General Settings', 'path' => '/admin/settings/general'],
-                    ['name' => 'Notification Settings', 'path' => '/admin/settings/notifications'],
-                ],
-            ],
-        ];
-    }
+    // public static function getUserManagementItems()
+    // {
+    //     return [
+    //         [
+    //             'icon' => 'users',
+    //             'name' => 'User Management',
+    //             'subItems' => [
+    //                 ['name' => 'View Users', 'path' => '/admin/user-management'],
+    //                 ['name' => 'Roles and Permissions', 'path' => '/admin/user-management/roles'],
+    //             ],
+    //         ],
+    //         [
+    //             'icon' => 'settings',
+    //             'name' => 'Settings',
+    //             'subItems' => [
+    //                 ['name' => 'General Settings', 'path' => '/admin/settings/general'],
+    //                 ['name' => 'Notification Settings', 'path' => '/admin/settings/notifications'],
+    //             ],
+    //         ],
+    //     ];
+    // }
 
     // Combining all Menu Items into Groups
     public static function getMenuGroups()
@@ -108,10 +108,10 @@ class MenuHelper
                 'title' => 'Learning',
                 'items' => self::getMainNavItems()
             ],
-            [
-                'title' => 'Management',
-                'items' => self::getUserManagementItems()
-            ],
+            // [
+            //     'title' => 'Management',
+            //     'items' => self::getUserManagementItems()
+            // ],
         ];
     }
 
