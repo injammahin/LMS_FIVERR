@@ -113,6 +113,7 @@ Route::middleware(['auth', 'admin','active'])
 Route::middleware(['auth', 'role:student','active'])
     ->prefix('student')
     ->name('student.')
+      ->scopeBindings()
     ->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
