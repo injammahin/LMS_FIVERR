@@ -10,11 +10,13 @@ use App\Models\QuizAttempt;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use App\Notifications\QuizAttemptGraded;
+use Illuminate\Support\Facades\DB;
 
 class SubmissionController extends Controller
 {
     use TeacherCounts;
 
+  
     public function index(Request $request)
     {
         $courseIds = $this->teacherCourseIds();
@@ -23,22 +25,38 @@ class SubmissionController extends Controller
         $assignmentSubs = null;
         $quizAttempts = null;
 
-        // Assignments
+        /**
+         * ✅ Only latest ASSIGNMENT submission per (assignment_id, user_id)
+         */
         if ($filter === 'all' || $filter === 'assignment') {
+            $latestAssignmentIds = AssignmentSubmission::query()
+                ->select(DB::raw('MAX(id) as id'))
+                ->whereHas('assignment.course', fn ($q) => $q->whereIn('id', $courseIds))
+                ->groupBy('assignment_id', 'user_id');
+
             $assignmentSubs = AssignmentSubmission::query()
                 ->with(['user', 'assignment.course'])
-                ->whereHas('assignment.course', fn ($q) => $q->whereIn('id', $courseIds))
+                ->whereIn('id', $latestAssignmentIds)
                 ->latest()
                 ->paginate(15, ['*'], 'assignments_page')
                 ->appends($request->query());
         }
 
-        // Quizzes (show submitted + reviewed; graded attempts can be shown too if you want)
+        /**
+         * ✅ Only latest QUIZ attempt per (quiz_id, user_id)
+         * You said you want latest quiz submission too (not all attempts).
+         */
         if ($filter === 'all' || $filter === 'quiz') {
+            $latestQuizAttemptIds = QuizAttempt::query()
+                ->select(DB::raw('MAX(id) as id'))
+                ->whereHas('quiz.course', fn ($q) => $q->whereIn('id', $courseIds))
+                ->whereIn('status', ['submitted', 'reviewed']) // inbox items
+                ->whereNotNull('submitted_at')
+                ->groupBy('quiz_id', 'user_id');
+
             $quizAttempts = QuizAttempt::query()
                 ->with(['user', 'quiz.course'])
-                ->whereHas('quiz.course', fn ($q) => $q->whereIn('id', $courseIds))
-                ->whereIn('status', ['submitted', 'reviewed']) // ✅ inbox for pending review
+                ->whereIn('id', $latestQuizAttemptIds)
                 ->latest()
                 ->paginate(15, ['*'], 'quizzes_page')
                 ->appends($request->query());

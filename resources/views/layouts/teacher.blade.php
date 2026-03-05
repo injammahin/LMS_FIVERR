@@ -295,5 +295,6 @@
     </script>
 
     @stack('scripts')
+    <x-ai-live-chat />
 </body>
 </html>

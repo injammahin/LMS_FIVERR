@@ -14,7 +14,7 @@ class AssignmentViewController extends Controller
 
             $user = auth()->user();
             $divisionId = optional(optional($course->subject)->division)->id;
-            abort_if((int)$user->division_id !== (int)$divisionId, 403);
+            // abort_if((int)$user->division_id !== (int)$divisionId, 403);
 
             // ✅ latest submission (if multiple attempts allowed)
             $submission = $assignment->submissions()

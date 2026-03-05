@@ -21,7 +21,9 @@ use App\Http\Controllers\Student\AssignmentViewController;
 use App\Http\Controllers\Student\QuizAttemptController;
 use App\Http\Controllers\Student\AssignmentSubmissionController as StudentAssignmentSubmissionController;
 use App\Http\Controllers\Student\NotificationController as StudentNotificationController;
-
+use App\Http\Controllers\AiChatController;
+use App\Http\Controllers\Admin\AiTrainingController;
+use App\Http\Controllers\Admin\AiTrainingFileController;
 
 
 /*
@@ -38,12 +40,17 @@ use App\Http\Controllers\Student\NotificationController as StudentNotificationCo
 Route::get('/', function () {
     return redirect()->route('login');
 });
-
+Route::middleware(['throttle:20,1'])
+    ->post('/ai/public/stream', [AiChatController::class, 'publicStream'])
+    ->name('ai.public.stream');
+    
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    Route::post('/ai/chat/stream', [AiChatController::class, 'stream'])
+          ->name('ai.chat.stream');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -103,6 +110,24 @@ Route::middleware(['auth', 'admin','active'])
         // suspend/activate
         Route::patch('staffs/{staff}/toggle-status', [\App\Http\Controllers\Admin\StaffController::class, 'toggleStatus'])
             ->name('staffs.toggle-status');
+
+        //---------------------------AI-------------------------
+        Route::prefix('ai-assistant')->name('ai.')->group(function () {
+
+            // KB
+            Route::get('knowledge', [AiTrainingController::class, 'index'])->name('kb.index');
+            Route::get('knowledge/create', [AiTrainingController::class, 'create'])->name('kb.create');
+            Route::post('knowledge', [AiTrainingController::class, 'store'])->name('kb.store');
+            Route::get('knowledge/{kb}/edit', [AiTrainingController::class, 'edit'])->name('kb.edit');
+            Route::put('knowledge/{kb}', [AiTrainingController::class, 'update'])->name('kb.update');
+            Route::delete('knowledge/{kb}', [AiTrainingController::class, 'destroy'])->name('kb.destroy');
+
+            // Files
+            Route::get('files', [AiTrainingFileController::class, 'index'])->name('files.index');
+            Route::get('files/create', [AiTrainingFileController::class, 'create'])->name('files.create');
+            Route::post('files', [AiTrainingFileController::class, 'store'])->name('files.store');
+
+        });
             
 });
 
@@ -113,6 +138,7 @@ Route::middleware(['auth', 'admin','active'])
 Route::middleware(['auth', 'role:student','active'])
     ->prefix('student')
     ->name('student.')
+      ->scopeBindings()
     ->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 

@@ -34,6 +34,7 @@
             @yield('content')
         </main>
     </div>
+    <x-ai-live-chat />
 </body>
 
 </html>

@@ -27,9 +27,11 @@ class SubjectBrowseController extends Controller
         abort_if((int)$subject->division_id !== (int)$division->id, 404);
 
         // Load courses and their lessons/quizzes/assignments
-        $subject->load([
+       $subject->load([
             'courses' => function ($q) {
-                $q->orderBy('title')->with([
+                $q->where('status', 'published')          // ✅ hide drafts
+                ->orderBy('title')
+                ->with([
                     'lessons' => fn($lq) => $lq->orderBy('position'),
                     'quizzes' => fn($qq) => $qq->latest(),
                     'assignments' => fn($aq) => $aq->latest(),

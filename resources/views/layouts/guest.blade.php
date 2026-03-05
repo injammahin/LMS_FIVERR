@@ -28,5 +28,6 @@
             @yield('content') <!-- This is where child view content will go -->
         </div>
     </div>
+    <x-ai-live-chat />
 </body>
 </html>

@@ -228,6 +228,6 @@
       var APP_URL = "{{ config('app.url') }}";
     </script>
   </div>
-
+<x-ai-live-chat />
 </body>
 </html>

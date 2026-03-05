@@ -94,7 +94,7 @@
 
         @yield('scripts')
     </div>
-
+<x-ai-live-chat />
 </body>
 
 </html>

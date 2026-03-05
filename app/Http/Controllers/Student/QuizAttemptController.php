@@ -19,7 +19,7 @@ class QuizAttemptController extends Controller
 
         // ✅ Division guard
         $divisionId = optional(optional($quiz->course->subject)->division)->id;
-        abort_if((int)$user->division_id !== (int)$divisionId, 403);
+        // abort_if((int)$user->division_id !== (int)$divisionId, 403);
 
         // ✅ published only
         abort_if(($quiz->status ?? 'draft') !== 'published', 403);
@@ -90,7 +90,7 @@ class QuizAttemptController extends Controller
 
         // ✅ Division guard
         $divisionId = optional(optional($course->subject)->division)->id;
-        abort_if((int)$user->division_id !== (int)$divisionId, 403);
+        // abort_if((int)$user->division_id !== (int)$divisionId, 403);
 
         // ✅ if time ended => auto submit
         if ((int)($attempt->duration_seconds ?? 0) > 0) {
@@ -144,7 +144,7 @@ class QuizAttemptController extends Controller
 
         // ✅ Division guard
         $divisionId = optional(optional($course->subject)->division)->id;
-        abort_if((int)$user->division_id !== (int)$divisionId, 403);
+        // abort_if((int)$user->division_id !== (int)$divisionId, 403);
 
         // ✅ validate only file questions
         foreach ($quiz->questions as $q) {
