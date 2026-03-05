@@ -2,7 +2,7 @@
 
 @section('title', 'Notifications')
 
-@section('teacher_content')
+@section('content')
     <div class="space-y-6">
 
         <div class="flex items-start justify-between">

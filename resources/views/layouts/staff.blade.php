@@ -136,6 +136,7 @@
                     </div>
 
                     <div class="flex items-center gap-2">
+                        <x-staff.chat-dropdown />
                         {{-- Optional notifications --}}
                         @if(\Illuminate\Support\Facades\Route::has('staff.notifications.index'))
                             <a href="{{ route('staff.notifications.index') }}"

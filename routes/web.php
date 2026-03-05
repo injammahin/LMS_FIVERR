@@ -22,6 +22,7 @@ use App\Http\Controllers\Student\QuizAttemptController;
 use App\Http\Controllers\Student\AssignmentSubmissionController as StudentAssignmentSubmissionController;
 use App\Http\Controllers\Student\NotificationController as StudentNotificationController;
 use App\Http\Controllers\AiChatController;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\Admin\AiTrainingController;
 use App\Http\Controllers\Admin\AiTrainingFileController;
 
@@ -49,6 +50,11 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    Route::get('/chat-users',[ChatController::class,'users'])->name('chat.users');
+
+Route::get('/chat/{id}',[ChatController::class,'chat'])->name('chat.view');
+Route::post('/chat/seen', [ChatController::class,'markSeen'])->name('chat.seen');
+Route::post('/chat/send',[ChatController::class,'send'])->name('chat.send');
     Route::post('/ai/chat/stream', [AiChatController::class, 'stream'])
           ->name('ai.chat.stream');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

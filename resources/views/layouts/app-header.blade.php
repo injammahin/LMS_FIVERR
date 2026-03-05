@@ -114,7 +114,8 @@
                 </button>
 
                 <!-- Notification Dropdown -->
-                <x-header.notification-dropdown />
+                {{-- <x-header.notification-dropdown /> --}}
+                <x-header.chat-dropdown />
             </div>
 
             <!-- User Dropdown -->

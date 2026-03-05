@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -14,6 +15,7 @@
     <!-- Tailwind CSS -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
+
 <body class="font-sans text-gray-900 antialiased bg-gradient-to-br from-black via-orange-800 to-black">
     <div class="min-h-screen flex flex-col justify-center items-center pt-6 sm:pt-0">
         <!-- Logo -->
@@ -28,6 +30,6 @@
             @yield('content') <!-- This is where child view content will go -->
         </div>
     </div>
-    <x-ai-live-chat />
 </body>
+
 </html>
