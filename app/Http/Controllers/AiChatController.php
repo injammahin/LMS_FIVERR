@@ -899,7 +899,7 @@ class AiChatController extends Controller
 
     private function fallbackSupportAnswer(string $message): string
     {
-        return "✅ I can help.\n\nTry one of these:\n• Type: **course 1** (or a course name)\n• Then type: **1** for Lesson list\n• Then type: **Explain lesson 2**";
+        return "✅ I can help.\n\nTry one of these:\n• Type:  a course name\n• Then type: **1** for Lesson list\n• Then type: **Explain lesson 2**";
     }
 
     // =========================================================
