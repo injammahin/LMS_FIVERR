@@ -15,20 +15,27 @@ class StudentController extends Controller
     {
         $perPage = $request->per_page ?? 10;
         $search = $request->search;
+        $divisionId = $request->division_id;
 
         $students = User::where('role', 'student')
+            ->when($divisionId, function ($query) use ($divisionId) {
+                $query->where('division_id', $divisionId);
+            })
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%$search%")
-                      ->orWhere('email', 'like', "%$search%")
-                      ->orWhere('username', 'like', "%$search%");
+                        ->orWhere('email', 'like', "%$search%")
+                        ->orWhere('username', 'like', "%$search%");
                 });
             })
+            ->with('division')
             ->latest()
             ->paginate($perPage)
             ->withQueryString();
 
-        return view('admin.students.index', compact('students'));
+        $divisions = Division::orderBy('name')->get();
+
+        return view('admin.students.index', compact('students','divisions'));
     }
 
     public function store(Request $request)

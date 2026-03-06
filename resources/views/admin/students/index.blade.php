@@ -5,13 +5,13 @@
 @section('content')
 
     <div class="space-y-6 text-xxs" x-data="{
-            openDelete: false,
-            deleteUrl: '',
-            openToggle: false,
-            toggleUrl: '',
-            toggleAction: 'Suspend',
-            toggleName: ''
-         }">
+                openDelete: false,
+                deleteUrl: '',
+                openToggle: false,
+                toggleUrl: '',
+                toggleAction: 'Suspend',
+                toggleName: ''
+             }">
 
         {{-- Flash Messages --}}
         @if (session('success'))
@@ -81,19 +81,40 @@
                     <p class="text-xxs text-gray-400">Your most recent students</p>
                 </div>
 
-                <form method="GET" class="flex gap-3 mt-3 md:mt-0">
+                <form method="GET" class="flex gap-3 mt-3 md:mt-0 items-center">
+
+                    {{-- Search --}}
                     <div class="relative">
-                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by name..."
+                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search students..."
                             class="pl-8 pr-3 py-2 text-xxs border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none">
+
                         <i class="fa fa-search absolute left-2 top-2.5 text-gray-400 text-xxs"></i>
                     </div>
 
+                    {{-- Division Filter --}}
+                    <select name="division_id" onchange="this.form.submit()"
+                        class="px-3 py-2 text-xxs border border-gray-300 rounded-lg focus:outline-none">
+
+                        <option value="">All Divisions</option>
+
+                        @foreach($divisions as $division)
+                            <option value="{{ $division->id }}" {{ request('division_id') == $division->id ? 'selected' : '' }}>
+                                {{ $division->name }}
+                            </option>
+                        @endforeach
+
+                    </select>
+
+                    {{-- Per Page --}}
                     <select name="per_page" onchange="this.form.submit()"
                         class="px-3 py-2 text-xxs border border-gray-300 rounded-lg focus:outline-none">
+
                         <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }}>10</option>
                         <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
                         <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
+
                     </select>
+
                 </form>
             </div>
 
@@ -146,13 +167,13 @@
 
                                     {{-- Suspend/Activate (with confirmation modal) --}}
                                     <button type="button" @click="
-                                                openToggle = true;
-                                                toggleUrl = '{{ route('admin.students.toggle-status', $student->id) }}';
-                                                toggleAction = '{{ $student->is_active ? 'Suspend' : 'Activate' }}';
-                                                toggleName = '{{ addslashes($student->name) }}';
-                                            "
+                                                        openToggle = true;
+                                                        toggleUrl = '{{ route('admin.students.toggle-status', $student->id) }}';
+                                                        toggleAction = '{{ $student->is_active ? 'Suspend' : 'Activate' }}';
+                                                        toggleName = '{{ addslashes($student->name) }}';
+                                                    "
                                         class="inline-flex items-center justify-center px-3 py-1.5 rounded-lg border border-gray-200 text-[10px]
-                                                   {{ $student->is_active ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-green-100 text-green-700 hover:bg-green-200' }}">
+                                                           {{ $student->is_active ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-green-100 text-green-700 hover:bg-green-200' }}">
                                         {{ $student->is_active ? 'Suspend' : 'Activate' }}
                                     </button>
 
