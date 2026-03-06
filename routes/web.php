@@ -180,6 +180,10 @@ Route::middleware(['auth', 'role:student','active'])
 
         Route::post('/notifications/{id}/read', [StudentNotificationController::class, 'read'])->name('notifications.read');
         Route::post('/notifications/{id}/unread', [StudentNotificationController::class, 'unread'])->name('notifications.unread');
+        Route::get('/chat', [ChatController::class,'users'])
+            ->name('chat.users');
+        Route::get('/chat/{id}', [ChatController::class,'chat'])
+            ->name('chat.view');
     });
 
 use App\Http\Controllers\Teacher\SubmissionController;
@@ -226,6 +230,11 @@ Route::middleware(['auth', 'role:teacher','active'])
             ->name('notifications.read_all');
         Route::get('/courses/{course}/students/{student}', [\App\Http\Controllers\Teacher\CourseController::class, 'studentProgress'])
               ->name('courses.students.show');
+         Route::get('/chat', [ChatController::class,'users'])
+            ->name('chat.users');
+        Route::get('/chat/{id}', [ChatController::class,'chat'])
+            ->name('chat.view');
+
             
 
     });

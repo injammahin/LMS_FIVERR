@@ -1,12 +1,12 @@
-@extends('layouts.admin')
+@extends('layouts.teacher')
 
 @section('content')
 
-    <div class="max-w-7xl mx-auto py-6">
+    <div class="max-w-7xl mx-auto py-6 space-y-6">
 
-        <!-- TITLE -->
+        <!-- PAGE HEADER -->
 
-        <div class="mb-6 flex items-center justify-between">
+        <div class="flex items-center justify-between">
 
             <div>
 
@@ -19,9 +19,15 @@
                 </h2>
 
                 <p class="text-xs text-gray-500">
-                    Message teachers and staff members
+
+                    Message Admin or Students
+
                 </p>
 
+            </div>
+
+            <div class="text-xs text-gray-400">
+                {{ $users->count() }} Users
             </div>
 
         </div>
@@ -30,7 +36,7 @@
         <!-- FILTER BAR -->
 
         <form method="GET"
-            class="bg-white rounded-xl shadow-sm border p-3 mb-6 flex flex-wrap lg:flex-nowrap items-center gap-3">
+            class="bg-white rounded-xl shadow-sm border p-4 flex flex-wrap lg:flex-nowrap gap-3 items-center">
 
             <!-- SEARCH -->
 
@@ -48,65 +54,34 @@
 
                 <option value="">All Roles</option>
 
-                <option value="teacher" {{ request('role') == 'teacher' ? 'selected' : '' }}>
-                    Teachers
+                <option value="admin" {{ request('role') == 'admin' ? 'selected' : '' }}>
+                    Admin
                 </option>
 
-                <option value="staff" {{ request('role') == 'staff' ? 'selected' : '' }}>
-                    Staff
+                <option value="student" {{ request('role') == 'student' ? 'selected' : '' }}>
+                    Student
                 </option>
 
             </select>
 
 
-            <!-- DIVISION -->
+            <!-- DIVISION FILTER -->
 
-            <select name="division_id" class="border rounded-lg px-3 py-2 text-sm">
+            {{-- <select name="division_id" class="border rounded-lg px-3 py-2 text-sm">
 
                 <option value="">All Divisions</option>
 
                 @foreach($divisions as $division)
 
-                    <option value="{{ $division->id }}" {{ request('division_id') == $division->id ? 'selected' : '' }}>
+                <option value="{{ $division->id }}" {{ request('division_id')==$division->id ? 'selected' : '' }}>
 
-                        {{ $division->name }}
+                    {{ $division->name }}
 
-                    </option>
-
-                @endforeach
-
-            </select>
-            <select name="subject_id" class="border rounded-lg px-3 py-2 text-sm">
-
-                <option value="">All Subjects</option>
-
-                @foreach($subjects as $subject)
-
-                    <option value="{{ $subject->id }}" {{ request('subject_id') == $subject->id ? 'selected' : '' }}>
-                        {{ $subject->name }}
-                    </option>
+                </option>
 
                 @endforeach
 
-            </select>
-
-            <!-- COURSE -->
-
-            <select name="course_id" class="border rounded-lg px-3 py-2 text-sm">
-
-                <option value="">All Courses</option>
-
-                @foreach($courses as $course)
-
-                    <option value="{{ $course->id }}" {{ request('course_id') == $course->id ? 'selected' : '' }}>
-
-                        {{ $course->title }}
-
-                    </option>
-
-                @endforeach
-
-            </select>
+            </select> --}}
 
 
             <!-- FILTER BUTTON -->
@@ -122,7 +97,7 @@
 
             <!-- RESET -->
 
-            <a href="{{ route('chat.users') }}"
+            <a href="{{ route('teacher.chat.users') }}"
                 class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm px-4 py-2 rounded-lg flex items-center gap-2">
 
                 <i class="fa-solid fa-rotate-left"></i>
@@ -134,20 +109,28 @@
         </form>
 
 
-
         <!-- USERS LIST -->
 
-        <div class="bg-white rounded-2xl shadow-lg overflow-hidden border">
+        <div class="bg-white rounded-2xl shadow-lg border overflow-hidden">
 
             @forelse($users as $user)
 
-                <a href="{{ route('chat.view', $user->id) }}"
+                <a href="{{ route('teacher.chat.view', $user->id) }}"
                     class="flex items-center gap-4 px-6 py-4 border-b hover:bg-blue-50 transition">
 
                     <!-- AVATAR -->
 
-                    <img src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=random"
-                        class="w-12 h-12 rounded-full shadow">
+                    <div class="relative">
+
+                        <img src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=random"
+                            class="w-12 h-12 rounded-full shadow">
+
+                        <!-- online indicator -->
+
+                        <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+
+                    </div>
+
 
                     <!-- USER INFO -->
 
@@ -159,18 +142,26 @@
 
                         </div>
 
-                        <div class="text-xs text-gray-500 flex items-center gap-2">
 
-                            @if($user->role == 'teacher')
+                        <div class="text-xs text-gray-500 flex items-center gap-2 mt-1">
 
-                                <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-[10px]">
-                                    Teacher
+                            @if($user->role == 'admin')
+
+                                <span class="px-2 py-1 bg-red-100 text-red-600 rounded-full text-[10px]">
+
+                                    Admin
+
                                 </span>
 
-                            @else
+                            @endif
 
-                                <span class="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-[10px]">
-                                    Staff
+
+                            @if($user->role == 'student')
+
+                                <span class="px-2 py-1 bg-green-100 text-green-600 rounded-full text-[10px]">
+
+                                    Student
+
                                 </span>
 
                             @endif

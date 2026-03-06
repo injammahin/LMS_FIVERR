@@ -86,4 +86,13 @@ class User extends Authenticatable
     {
         return $this->hasMany(\App\Models\Message::class,'receiver_id');
     }
+    public function courses()
+    {
+        return $this->belongsToMany(
+            \App\Models\Course::class,
+            'course_teacher',   // pivot table
+            'teacher_id',
+            'course_id'
+        );
+    }
 }

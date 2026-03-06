@@ -2,265 +2,148 @@
     use App\Models\Message;
     use App\Models\User;
 
-    $admin = User::where('role', 'admin')->first();
+    $unreadMessages = Message::where('receiver_id', auth()->id())
+        ->whereNull('seen_at')
+        ->latest()
+        ->take(10)
+        ->get();
 
-    $messages = Message::where(function ($q) use ($admin) {
-        $q->where('sender_id', auth()->id())
-            ->where('receiver_id', $admin->id);
-    })
-        ->orWhere(function ($q) use ($admin) {
-            $q->where('sender_id', $admin->id)
-                ->where('receiver_id', auth()->id());
-        })
-        ->latest()->take(30)->get()->reverse();
-
-    $unreadCount = Message::where('sender_id', $admin->id)
-        ->where('receiver_id', auth()->id())
+    $unreadCount = Message::where('receiver_id', auth()->id())
         ->whereNull('seen_at')
         ->count();
 @endphp
 
 
-<div class="relative" x-data="{open:false,typing:false}">
+<div x-data="{open:false, timer:null}" class="relative" @mouseenter="clearTimeout(timer); open=true"
+    @mouseleave="timer=setTimeout(()=>open=false,200)">
 
-    <!-- CHAT BUTTON -->
+    <!-- CHAT ICON -->
 
-    <button @click="open=!open; markSeen()"
-        class="relative w-10 h-10 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 grid place-items-center">
+    <a href="{{ route('teacher.chat.users') }}"
+        class="relative w-10 h-10 rounded-xl border border-gray-200 bg-white hover:bg-blue-50 transition grid place-items-center shadow-sm">
 
         <i class="fa-solid fa-comments text-gray-700"></i>
 
         @if($unreadCount)
-            <span id="chatBadge"
-                class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] grid place-items-center">
+            <span
+                class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] grid place-items-center animate-pulse">
                 {{ $unreadCount }}
             </span>
         @endif
 
-    </button>
+    </a>
 
 
+    <!-- DROPDOWN -->
 
-    <!-- CHAT PANEL -->
-
-    <div x-show="open" @click.outside="open=false" x-transition
-        class="absolute right-0 mt-3 w-[360px] bg-white rounded-2xl shadow-2xl border flex flex-col overflow-hidden"
+    <div x-show="open" x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 scale-95 translate-y-2"
+        x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100"
+        x-transition:leave-end="opacity-0 scale-95"
+        class="absolute right-0 mt-3 w-[340px] bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden"
         style="display:none">
-
 
         <!-- HEADER -->
 
-        <div class="px-4 py-3 border-b flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div class="px-4 py-3 border-b flex justify-between items-center bg-gray-50">
 
-            <img src="https://ui-avatars.com/api/?name=Admin" class="w-8 h-8 rounded-full">
-
-            <div>
-                <div class="text-sm font-semibold">Admin</div>
-                <div class="text-[10px] text-green-600">Online</div>
+            <div class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                <i class="fa-solid fa-comment-dots text-blue-500"></i>
+                Unread Messages
             </div>
+
+            <span class="text-xs text-gray-400">
+                {{ $unreadCount }} new
+            </span>
 
         </div>
 
 
+        <!-- MESSAGE LIST -->
 
-        <!-- CHAT BODY -->
+        <div class="max-h-[320px] overflow-y-auto">
 
-        <div id="chatMini" class="flex-1 max-h-[320px] overflow-y-auto p-4 space-y-3 bg-gray-50">
+            @forelse($unreadMessages as $msg)
 
-            @foreach($messages as $msg)
+                @php
+                    $sender = User::find($msg->sender_id);
+                @endphp
 
-                @if($msg->sender_id == auth()->id())
+                <a href="{{ route('chat.view', $sender->id) }}"
+                    class="flex gap-3 px-4 py-3 hover:bg-blue-50 transition border-b items-center">
 
-                    <div class="flex justify-end">
+                    <!-- AVATAR -->
 
-                        <div class="bg-blue-600 text-white text-xs px-3 py-2 rounded-2xl shadow max-w-[70%]">
+                    <img src="https://ui-avatars.com/api/?name={{ urlencode($sender->name) }}&background=random"
+                        class="w-9 h-9 rounded-full shadow" />
 
-                            {{ $msg->message }}
 
-                            <div class="text-[9px] text-right opacity-70 mt-1">
-                                {{ $msg->created_at->format('H:i') }}
-                            </div>
+                    <!-- MESSAGE -->
+
+                    <div class="flex-1 min-w-0">
+
+                        <div class="flex justify-between items-center">
+
+                            <span class="text-sm font-semibold text-gray-800 truncate">
+                                {{ $sender->name }}
+                            </span>
+
+                            <span class="text-[10px] text-gray-400">
+                                {{ $msg->created_at->diffForHumans() }}
+                            </span>
+
+                        </div>
+
+                        <div class="text-xs text-gray-500 truncate flex items-center gap-1">
+
+                            @if($msg->message)
+
+                                <i class="fa-solid fa-message text-gray-400 text-[10px]"></i>
+                                {{ $msg->message }}
+
+                            @else
+
+                                <i class="fa-solid fa-paperclip text-gray-400 text-[10px]"></i>
+                                File sent
+
+                            @endif
 
                         </div>
 
                     </div>
 
-                @else
+                </a>
 
-                    <div class="flex gap-2">
+            @empty
 
-                        <img src="https://ui-avatars.com/api/?name=Admin" class="w-6 h-6 rounded-full">
+                <div class="text-center text-xs text-gray-400 py-10">
 
-                        <div class="bg-white text-xs px-3 py-2 rounded-2xl shadow max-w-[70%]">
+                    <i class="fa-regular fa-face-smile text-lg mb-2"></i>
 
-                            {{ $msg->message }}
-
-                            <div class="text-[9px] text-gray-400 mt-1">
-                                {{ $msg->created_at->format('H:i') }}
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                @endif
-
-            @endforeach
-
-
-            <!-- TYPING -->
-
-            <div x-show="typing" class="flex gap-2">
-
-                <img src="https://ui-avatars.com/api/?name=Admin" class="w-6 h-6 rounded-full">
-
-                <div class="bg-white px-3 py-2 rounded-xl shadow text-xs text-gray-600 flex gap-1">
-
-                    <span class="dot"></span>
-                    <span class="dot"></span>
-                    <span class="dot"></span>
+                    <p>No unread messages</p>
 
                 </div>
 
-            </div>
+            @endforelse
 
         </div>
 
 
+        <!-- FOOTER -->
 
-        <!-- INPUT -->
+        <div class="p-3 text-center border-t bg-gray-50">
 
-        <form id="miniChatForm" class="border-t p-3 flex items-center gap-2 bg-white">
+            <a href="{{ route('teacher.chat.users') }}"
+                class="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center justify-center gap-1">
 
-            @csrf
+                <i class="fa-solid fa-comments"></i>
+                Open Chat
 
-            <input type="hidden" name="receiver_id" value="{{ $admin->id }}">
+            </a>
 
-            <input id="miniMessage" type="text" name="message" placeholder="Type message..."
-                @input="typing=true; setTimeout(()=>typing=false,1000)"
-                class="flex-1 border rounded-full px-3 py-1 text-xs focus:ring-2 focus:ring-blue-400">
-
-            <button type="submit" class="bg-blue-600 text-white w-8 h-8 rounded-full grid place-items-center">
-
-                <i class="fa-solid fa-paper-plane text-xs"></i>
-
-            </button>
-
-        </form>
+        </div>
 
     </div>
-</div>
-
-
-
-<style>
-    .dot {
-        width: 6px;
-        height: 6px;
-        background: #9ca3af;
-        border-radius: 50%;
-        animation: typing 1.2s infinite;
-    }
-
-    .dot:nth-child(2) {
-        animation-delay: .2s
-    }
-
-    .dot:nth-child(3) {
-        animation-delay: .4s
-    }
-
-    @keyframes typing {
-        0% {
-            opacity: .2
-        }
-
-        50% {
-            opacity: 1
-        }
-
-        100% {
-            opacity: .2
-        }
-    }
-</style>
-
-
-
-<script>
-
-    document.addEventListener("DOMContentLoaded", function () {
-
-        const form = document.getElementById("miniChatForm");
-        const input = document.getElementById("miniMessage");
-        const chat = document.getElementById("chatMini");
-
-        chat.scrollTop = chat.scrollHeight;
-
-
-        form.addEventListener("submit", function (e) {
-
-            e.preventDefault();
-
-            let message = input.value.trim();
-
-            if (message === "") return;
-
-            let formData = new FormData(form);
-
-            fetch("{{ route('chat.send') }}", {
-                method: "POST",
-                headers: {
-                    "X-CSRF-TOKEN": "{{ csrf_token() }}",
-                    "Accept": "application/json"
-                },
-                body: formData
-            })
-                .then(res => res.json())
-                .then(data => {
-
-                    const html = `
-<div class="flex justify-end">
-
-<div class="bg-blue-600 text-white text-xs px-3 py-2 rounded-2xl shadow max-w-[70%]">
-
-${data.message}
-
-<div class="text-[9px] text-right opacity-70 mt-1">
-${data.time}
-</div>
 
 </div>
-
-</div>
-`;
-
-                    chat.insertAdjacentHTML("beforeend", html);
-
-                    chat.scrollTop = chat.scrollHeight;
-
-                    input.value = "";
-
-                });
-
-        });
-
-    });
-
-
-    function markSeen() {
-
-        fetch("{{ route('chat.seen') }}", {
-            method: "POST",
-            headers: {
-                "X-CSRF-TOKEN": "{{ csrf_token() }}"
-            }
-        });
-
-        let badge = document.getElementById("chatBadge");
-
-        if (badge) badge.remove();
-
-    }
-
-</script>

@@ -219,6 +219,7 @@
                               stroke-linecap="round" stroke-linejoin="round" />
                     </svg>
                 </button>
+                 <x-student.chat-dropdown />
 
                 {{-- Notifications --}}
                 <div class="relative" x-data="{ open:false }">
