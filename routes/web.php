@@ -46,8 +46,22 @@ Route::middleware(['throttle:20,1'])
     ->name('ai.public.stream');
     
 Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+
+    $user = auth()->user();
+
+    if (!$user) {
+        return redirect()->route('login');
+    }
+
+    return match ($user->role) {
+        'admin'   => redirect()->route('admin.dashboard'),
+        'teacher' => redirect()->route('teacher.dashboard'),
+        'student' => redirect()->route('student.dashboard'),
+        'staff'   => redirect()->route('staff.dashboard'),
+        default   => redirect('/'),
+    };
+
+})->middleware(['auth'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/chat-users',[ChatController::class,'users'])->name('chat.users');

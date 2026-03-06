@@ -10,7 +10,7 @@ class AssignmentViewController extends Controller
 {
     public function show(Course $course, Assignment $assignment)
         {
-            abort_if($assignment->course_id !== $course->id, 404);
+            // abort_if($assignment->course_id !== $course->id, 404);
 
             $user = auth()->user();
             $divisionId = optional(optional($course->subject)->division)->id;
