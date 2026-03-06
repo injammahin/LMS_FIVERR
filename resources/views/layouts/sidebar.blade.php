@@ -72,7 +72,7 @@
 
             <!-- Small Icon (Collapsed Sidebar) -->
             <img x-show="!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen"
-                class="h-8 w-auto object-contain" src="/images/logo/logo-icon.svg" alt="Logo" />
+                class="h-8 w-auto object-contain" src="{{ asset('img/logo_lms.jpg') }}" alt="Logo" />
 
         </div>
     </div>
@@ -133,9 +133,9 @@
                                             <svg x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
                                                 class="ml-auto w-5 h-5 transition-transform duration-200"
                                                 :class="{
-                                                                                                                                                                            'rotate-180 text-brand-500': isSubmenuOpen({{ $groupIndex }}, {{ $itemIndex }})
-                                                                                                                                                                        }" fill="none"
-                                                stroke="currentColor" viewBox="0 0 24 24">
+                                                                                                                                                                                        'rotate-180 text-brand-500': isSubmenuOpen({{ $groupIndex }}, {{ $itemIndex }})
+                                                                                                                                                                                    }"
+                                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M19 9l-7 7-7-7"></path>
                                             </svg>
