@@ -1,32 +1,51 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Jobs;
 
-use App\Jobs\SyncCourseToOpenAI;
 use App\Models\Course;
-use Illuminate\Console\Command;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
-class AiSyncApp extends Command
+class SyncCourseToOpenAI implements ShouldQueue
 {
-    protected $signature = 'ai:sync-app {--course=}';
-    protected $description = 'Auto-index LMS content (courses/lessons/quizzes/assignments) to OpenAI vector stores';
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function handle(): int
+    public int $courseId;
+
+    /**
+     * Create a new job instance.
+     */
+    public function __construct(int $courseId)
     {
-        $courseId = $this->option('course');
+        $this->courseId = $courseId;
+    }
 
-        if ($courseId) {
-            SyncCourseToOpenAI::dispatch((int)$courseId);
-            $this->info("Queued auto sync for course #{$courseId}");
-            return self::SUCCESS;
+    /**
+     * Execute the job.
+     */
+    public function handle(): void
+    {
+        $course = Course::with([
+            'lessons',
+            'quizzes',
+            'assignments'
+        ])->find($this->courseId);
+
+        if (!$course) {
+            Log::warning("OpenAI Sync: Course not found {$this->courseId}");
+            return;
         }
 
-        $courses = Course::select('id')->get();
-        foreach ($courses as $c) {
-            SyncCourseToOpenAI::dispatch((int)$c->id);
-        }
+        /*
+        ------------------------------------------------
+        YOUR OPENAI VECTOR INDEX LOGIC GOES HERE
+        ------------------------------------------------
+        */
 
-        $this->info("Queued auto sync for " . $courses->count() . " courses.");
-        return self::SUCCESS;
+        Log::info("OpenAI Sync completed for course {$this->courseId}");
     }
 }

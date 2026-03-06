@@ -2,37 +2,48 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\SyncCourseToOpenAI;
+use App\Models\Course;
 use Illuminate\Console\Command;
 
 class AiSyncApp extends Command
 {
-    /**
-     * The name and signature of the console command.
-     */
     protected $signature = 'ai:sync-app {--course=}';
 
-    /**
-     * The console command description.
-     */
-    protected $description = 'Auto-index LMS content to AI knowledge base (vector store)';
+    protected $description =
+        'Auto-index LMS content (courses/lessons/quizzes/assignments) to OpenAI vector stores';
 
     public function handle(): int
     {
         $courseId = $this->option('course');
 
-        if ($courseId) {
-            $this->info("Sync requested for course_id={$courseId}");
-            // Later you can dispatch job here:
-            // \App\Jobs\SyncCourseToOpenAI::dispatch((int)$courseId);
-            return self::SUCCESS;
+        try {
+
+            if ($courseId) {
+
+                SyncCourseToOpenAI::dispatch((int) $courseId);
+
+                $this->info("Queued auto sync for course #{$courseId}");
+
+                return Command::SUCCESS;
+            }
+
+            $courses = Course::select('id')->get();
+
+            foreach ($courses as $course) {
+
+                SyncCourseToOpenAI::dispatch((int) $course->id);
+            }
+
+            $this->info("Queued auto sync for {$courses->count()} courses.");
+
+        } catch (\Throwable $e) {
+
+            $this->error("AI Sync failed: " . $e->getMessage());
+
+            return Command::FAILURE;
         }
 
-        $this->info("Sync requested for all courses");
-        // Later you can dispatch all courses:
-        // \App\Models\Course::select('id')->chunk(50, function($rows){
-        //     foreach($rows as $r) \App\Jobs\SyncCourseToOpenAI::dispatch($r->id);
-        // });
-
-        return self::SUCCESS;
+        return Command::SUCCESS;
     }
 }

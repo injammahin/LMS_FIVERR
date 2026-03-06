@@ -29,4 +29,8 @@ class Lesson extends Model
     {
         return $this->hasMany(\App\Models\LessonProgress::class);
     }
+    public function blocks()
+    {
+        return $this->hasMany(\App\Models\LessonBlock::class);
+    }
 }

@@ -2,13 +2,15 @@
 
 namespace App\Observers;
 
-use App\Jobs\SyncCourseToOpenAI;
 use App\Models\Lesson;
+use App\Jobs\SyncCourseToOpenAI;
 
 class LessonObserver
 {
     public function saved(Lesson $lesson): void
     {
-        SyncCourseToOpenAI::dispatch($lesson->course_id);
+        if ($lesson->course_id) {
+            SyncCourseToOpenAI::dispatch($lesson->course_id);
+        }
     }
 }
