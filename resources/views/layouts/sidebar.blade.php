@@ -61,7 +61,7 @@
     <div class="pt-6 pb-6 flex justify-between items-center transition-all duration-200"
         :class="(!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen) ? 'xl:justify-center' : 'justify-start'">
 
-        <a href="/" class="flex items-center justify-center">
+        <div class="flex items-center justify-center">
 
             <!-- Full Logo (Expanded Sidebar) -->
             <img x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
@@ -74,7 +74,7 @@
             <img x-show="!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen"
                 class="h-8 w-auto object-contain" src="/images/logo/logo-icon.svg" alt="Logo" />
 
-        </a>
+        </div>
     </div>
     <!-- Navigation Menu -->
     <div class="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar space-y-4">
@@ -133,9 +133,9 @@
                                             <svg x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
                                                 class="ml-auto w-5 h-5 transition-transform duration-200"
                                                 :class="{
-                                                                                                                                                    'rotate-180 text-brand-500': isSubmenuOpen({{ $groupIndex }}, {{ $itemIndex }})
-                                                                                                                                                }" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
+                                                                                                                                                                            'rotate-180 text-brand-500': isSubmenuOpen({{ $groupIndex }}, {{ $itemIndex }})
+                                                                                                                                                                        }" fill="none"
+                                                stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M19 9l-7 7-7-7"></path>
                                             </svg>

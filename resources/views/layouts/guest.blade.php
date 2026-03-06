@@ -20,7 +20,7 @@
     <div class="min-h-screen flex flex-col justify-center items-center pt-6 sm:pt-0">
         <!-- Logo -->
         <div>
-            <a href="/">
+            <a>
                 <x-application-logo class="w-20 h-20 fill-current text-teal-500" />
             </a>
         </div>

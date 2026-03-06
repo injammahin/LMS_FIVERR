@@ -49,8 +49,8 @@
             </button>
 
             <!-- Logo (mobile only) -->
-            <a href="/" class="xl:hidden flex items-center">
-                <img class="dark:hidden h-9 w-auto object-contain" src="{{ asset('img/logo_lms.jpg') }}" alt="Logo" />
+            <a class="xl:hidden flex items-center">
+                <img class="dark:hidden h-9 w-auto object-contain" alt="Logo" />
 
                 <img class="hidden dark:block h-9 w-auto object-contain" src="/images/logo/logo-dark.svg" alt="Logo" />
             </a>
