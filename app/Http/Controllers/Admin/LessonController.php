@@ -30,7 +30,8 @@ class LessonController extends Controller
 
             // blocks
             'blocks' => ['nullable', 'array'],
-            'blocks.*.type' => ['required_with:blocks', 'in:text,video,file'],
+            'blocks.*.type' => ['required_with:blocks', 'in:text,video,file,h5p'],
+            'blocks.*.h5p_embed' => ['nullable','string'],
             'blocks.*.text' => ['nullable', 'string'],
             'blocks.*.video_url' => ['nullable', 'string', 'max:500'],
             'blocks.*.file' => [
@@ -72,7 +73,8 @@ class LessonController extends Controller
             'position' => ['required', 'integer', 'min:1'],
 
             'blocks' => ['nullable', 'array'],
-            'blocks.*.type' => ['required_with:blocks', 'in:text,video,file'],
+            'blocks.*.type' => ['required_with:blocks', 'in:text,video,file,h5p'],
+            'blocks.*.h5p_embed' => ['nullable','string'],
             'blocks.*.text' => ['nullable', 'string'],
             'blocks.*.video_url' => ['nullable', 'string', 'max:500'],
             'blocks.*.file' => [
@@ -143,6 +145,16 @@ class LessonController extends Controller
                 $result[] = [
                     'type' => 'video',
                     'video_url' => $url,
+                ];
+            }
+            if ($type === 'h5p') {
+                $embed = trim((string)($block['h5p_embed'] ?? ''));
+
+                if ($embed === '') continue;
+
+                $result[] = [
+                    'type' => 'h5p',
+                    'embed' => $embed,
                 ];
             }
 

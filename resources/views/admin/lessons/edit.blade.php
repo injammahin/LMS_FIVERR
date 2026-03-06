@@ -4,10 +4,15 @@
 
 @section('content')
     <div class="max-w-4xl mx-auto space-y-6" x-data="{
-                                blocks: @js(old('blocks', ($lesson->content_blocks ?? []))),
-                                addBlock(type='text'){ this.blocks.push({type:type}); },
-                                removeBlock(i){ this.blocks.splice(i,1); }
-                             }">
+                blocks: @js(old('blocks', ($lesson->content_blocks ?? []))),
+                addBlock(type = 'text') {
+                    if (type === 'text') this.blocks.push({ type: 'text', text: '' });
+                    if (type === 'video') this.blocks.push({ type: 'video', video_url: '' });
+                    if (type === 'file') this.blocks.push({ type: 'file', path: '' });
+                    if (type === 'h5p') this.blocks.push({ type: 'h5p', embed: '', h5p_embed: '' });
+                },
+                removeBlock(i) { this.blocks.splice(i, 1); }
+             }">
 
         <div>
             <h1 class="text-lg font-semibold text-gray-800 dark:text-white">Edit Lesson</h1>
@@ -38,7 +43,9 @@
                     <label class="block text-sm font-medium text-gray-700 dark:text-white/80 mb-1">Title</label>
                     <input type="text" name="title" value="{{ old('title', $lesson->title) }}"
                         class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-white/10 rounded-lg bg-white dark:bg-slate-950 dark:text-white focus:ring-1 focus:ring-blue-500 focus:outline-none">
-                    @error('title') <p class="text-red-500 text-sm mt-1">{{ $message }}</p> @enderror
+                    @error('title')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 {{-- Position --}}
@@ -46,13 +53,16 @@
                     <label class="block text-sm font-medium text-gray-700 dark:text-white/80 mb-1">Position</label>
                     <input type="number" name="position" min="1" value="{{ old('position', $lesson->position) }}"
                         class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-white/10 rounded-lg bg-white dark:bg-slate-950 dark:text-white focus:ring-1 focus:ring-blue-500 focus:outline-none">
-                    @error('position') <p class="text-red-500 text-sm mt-1">{{ $message }}</p> @enderror
+                    @error('position')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
 
-                {{-- Description (Quill) --}}
+                {{-- Description --}}
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-white/80 mb-1">Description
-                        (optional)</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-white/80 mb-1">
+                        Description (optional)
+                    </label>
 
                     <input type="hidden" name="description" id="descriptionInput"
                         value="{{ old('description', $lesson->description) }}">
@@ -63,16 +73,19 @@
                         class="border border-gray-300 dark:border-white/10 rounded-b-lg bg-white dark:bg-slate-950 dark:text-white min-h-[180px]">
                     </div>
 
-                    @error('description') <p class="text-red-500 text-sm mt-1">{{ $message }}</p> @enderror
+                    @error('description')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 {{-- Content Blocks --}}
                 <div class="space-y-3">
-                    <div class="flex items-center justify-between">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-white/80">Content Blocks
-                            (optional)</label>
+                    <div class="flex items-center justify-between flex-wrap gap-2">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-white/80">
+                            Content Blocks (optional)
+                        </label>
 
-                        <div class="flex gap-2">
+                        <div class="flex gap-2 flex-wrap">
                             <button type="button" @click="addBlock('text')"
                                 class="px-3 py-1.5 text-sm border border-gray-300 dark:border-white/10 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 dark:text-white">
                                 + Text
@@ -85,6 +98,10 @@
                                 class="px-3 py-1.5 text-sm border border-gray-300 dark:border-white/10 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 dark:text-white">
                                 + File
                             </button>
+                            <button type="button" @click="addBlock('h5p')"
+                                class="px-3 py-1.5 text-sm border border-indigo-300 text-indigo-700 dark:border-indigo-400/30 dark:text-indigo-300 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-500/10">
+                                + H5P
+                            </button>
                         </div>
                     </div>
 
@@ -94,7 +111,7 @@
 
                             <div class="flex items-center justify-between">
                                 <div class="text-sm font-medium text-gray-700 dark:text-white/80">
-                                    Block <span x-text="i+1"></span>
+                                    Block <span x-text="i + 1"></span>
                                     <span class="ml-2 text-xs px-2 py-1 rounded-full bg-white/70 dark:bg-white/10"
                                         x-text="block.type"></span>
                                 </div>
@@ -110,17 +127,16 @@
                             {{-- TEXT --}}
                             <div x-show="block.type === 'text'">
                                 <label class="block text-sm text-gray-600 dark:text-white/70 mb-1">Text</label>
-                                <textarea :name="`blocks[${i}][text]`" rows="5"
-                                    class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-white/10 rounded-lg bg-white dark:bg-slate-950 dark:text-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
-                                    x-text="block.text ?? ''"></textarea>
+                                <textarea :name="`blocks[${i}][text]`" rows="5" x-model="block.text"
+                                    class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-white/10 rounded-lg bg-white dark:bg-slate-950 dark:text-white focus:ring-1 focus:ring-blue-500 focus:outline-none"></textarea>
                             </div>
 
                             {{-- VIDEO --}}
                             <div x-show="block.type === 'video'">
                                 <label class="block text-sm text-gray-600 dark:text-white/70 mb-1">Video URL</label>
-                                <input type="text" :name="`blocks[${i}][video_url]`"
+                                <input type="text" :name="`blocks[${i}][video_url]`" x-model="block.video_url"
                                     class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-white/10 rounded-lg bg-white dark:bg-slate-950 dark:text-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
-                                    :value="block.video_url ?? ''" placeholder="https://youtube.com/...">
+                                    placeholder="https://youtube.com/... or other video URL">
                             </div>
 
                             {{-- FILE --}}
@@ -129,8 +145,11 @@
 
                                 <template x-if="block.path">
                                     <div class="text-xs text-gray-600 dark:text-white/70">
-                                        Current: <a class="text-blue-600 underline" target="_blank"
-                                            :href="`{{ asset('storage') }}/` + block.path">Open file</a>
+                                        Current:
+                                        <a class="text-blue-600 underline" target="_blank"
+                                            :href="`{{ asset('storage') }}/` + block.path">
+                                            Open file
+                                        </a>
                                     </div>
                                 </template>
 
@@ -148,6 +167,20 @@
                                 </template>
                             </div>
 
+                            {{-- H5P --}}
+                            <div x-show="block.type === 'h5p'">
+                                <label class="block text-sm text-gray-600 dark:text-white/70 mb-1">
+                                    H5P Embed Code
+                                </label>
+                                <textarea :name="`blocks[${i}][h5p_embed]`" rows="5"
+                                    x-model="block.h5p_embed ? block.h5p_embed : (block.embed ? block.embed : '')"
+                                    class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-white/10 rounded-lg bg-white dark:bg-slate-950 dark:text-white focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+                                    placeholder='<iframe src="https://your-h5p-url/embed/123" width="1090" height="645" frameborder="0" allowfullscreen="allowfullscreen"></iframe>'></textarea>
+
+                                <p class="text-xs text-gray-400 mt-1">
+                                    Paste or update the full H5P iframe embed code here.
+                                </p>
+                            </div>
                         </div>
                     </template>
                 </div>
@@ -172,8 +205,6 @@
 @section('scripts')
     <link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
-
-    {{-- Better CDN for this module --}}
     <script src="https://unpkg.com/quill-image-resize-module@3.0.0/image-resize.min.js"></script>
 
     <style>
@@ -185,22 +216,17 @@
     </style>
 
     <script>
-        // ✅ Register ONLY ONCE + handle default export
         (function () {
             const mod =
                 (window.ImageResize && (window.ImageResize.default || window.ImageResize)) ||
                 (window.QuillImageResizeModule && (window.QuillImageResizeModule.default || window.QuillImageResizeModule));
 
-            if (!mod) {
-                console.error('Image resize module not found. Check CDN loaded.');
-                return;
-            }
-
-            // Guard: don't re-register if already present
-            try {
-                Quill.import('modules/imageResize');
-            } catch (e) {
-                Quill.register('modules/imageResize', mod);
+            if (mod) {
+                try {
+                    Quill.import('modules/imageResize');
+                } catch (e) {
+                    Quill.register('modules/imageResize', mod);
+                }
             }
 
             const toolbarOptions = [
@@ -218,23 +244,20 @@
                 theme: 'snow',
                 modules: {
                     toolbar: toolbarOptions,
-                    imageResize: {
+                    imageResize: mod ? {
                         modules: ['Resize', 'DisplaySize', 'Toolbar']
-                    }
+                    } : false
                 }
             });
 
-            // Load initial HTML
             const initialHtml = @json(old('description', $lesson->description ?? ''));
-            if (initialHtml) quill.root.innerHTML = initialHtml;
+            if (initialHtml) {
+                quill.root.innerHTML = initialHtml;
+            }
 
-            // Save HTML on submit
             document.getElementById('lessonForm').addEventListener('submit', function () {
                 document.getElementById('descriptionInput').value = quill.root.innerHTML;
             });
-
-            // Quick debug
-            console.log('Quill + imageResize loaded ✅');
         })();
     </script>
 @endsection
