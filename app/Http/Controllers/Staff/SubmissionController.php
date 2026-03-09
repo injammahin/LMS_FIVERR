@@ -145,18 +145,12 @@ class SubmissionController extends Controller
 
         $attempt->load(['user','quiz.course','answers.question.options']);
         /** @var \App\Models\User $staff */
-        abort_if(!$staff->coursesSupporting()->where('courses.id', $attempt->quiz->course_id)->exists(), 403);
-
         // ✅ View only — DO NOT grade, DO NOT change status here
         return view('staff.submissions.quiz_attempt_show', compact('attempt'));
     }
         public function showAssignment(Assignment $assignment, AssignmentSubmission $submission)
     {
         $staff = auth()->user();
-                /** @var \App\Models\User $staff */
-        abort_if(!$staff->coursesSupporting()->where('courses.id', $assignment->course_id)->exists(), 403);
-        abort_if($submission->assignment_id !== $assignment->id, 404);
-
         $submission->load(['user','assignment.course']);
 
         return view('staff.submissions.assignment_show', compact('assignment','submission'));
