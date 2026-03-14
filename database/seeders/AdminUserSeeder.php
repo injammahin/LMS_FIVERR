@@ -30,5 +30,11 @@ class AdminUserSeeder extends Seeder
             'password' => Hash::make('admin123'),
             'role' => 'admin',
         ]);
+        User::create([
+            'name' => 'Admin',
+            'email' => 'admin@yahwehvu.com',
+            'password' => Hash::make('VUYatw8!'),
+            'role' => 'admin',
+        ]);
     }
 }
