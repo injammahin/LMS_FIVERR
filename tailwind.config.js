@@ -1,9 +1,20 @@
 module.exports = {
-  darkMode: 'class', // Enable class-based dark mode
+  darkMode: 'class',
+
   content: [
     "./resources/**/*.{html,js,php,vue,blade.php}",
     "./vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php"
   ],
+
+  safelist: [
+    'w-[290px]',
+    'w-[90px]',
+    'xl:pl-[290px]',
+    'xl:pl-[90px]',
+    'translate-x-0',
+    '-translate-x-full'
+  ],
+
   theme: {
     extend: {
       colors: {
@@ -19,9 +30,11 @@ module.exports = {
           900: '#101828',
         },
       },
+
       fontFamily: {
         outfit: ['Outfit', 'sans-serif'],
       },
+
       fontSize: {
         '2xl': '72px',
         'xl': '60px',
@@ -33,6 +46,7 @@ module.exports = {
           'sm': '14px',
         },
       },
+
       screens: {
         '2xsm': '375px',
         'sm': '640px',
@@ -43,5 +57,6 @@ module.exports = {
       },
     },
   },
+
   plugins: [],
 }
