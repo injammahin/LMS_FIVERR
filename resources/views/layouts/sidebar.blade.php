@@ -6,9 +6,10 @@
     $currentPath = request()->path();
 @endphp
 
-<aside id="sidebar"
-    class="fixed flex flex-col mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-99999 border-r border-gray-200 shadow-md"
-    x-data="{
+<aside id="sidebar" class="fixed flex flex-col mt-0 top-0 px-5 left-0
+bg-white dark:bg-gray-900 dark:border-gray-800
+text-gray-900 h-screen transition-all duration-300 ease-in-out
+z-[60] border-r border-gray-200 shadow-md" x-data="{
         openSubmenus: {},
         init() {
             // Auto-open Dashboard menu on page load
@@ -133,8 +134,8 @@
                                             <svg x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
                                                 class="ml-auto w-5 h-5 transition-transform duration-200"
                                                 :class="{
-                                                                                                                                                                                        'rotate-180 text-brand-500': isSubmenuOpen({{ $groupIndex }}, {{ $itemIndex }})
-                                                                                                                                                                                    }"
+                                                                                                                                                                                                                'rotate-180 text-brand-500': isSubmenuOpen({{ $groupIndex }}, {{ $itemIndex }})
+                                                                                                                                                                                                            }"
                                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M19 9l-7 7-7-7"></path>
@@ -205,4 +206,5 @@
 
 <!-- Mobile Overlay -->
 <div x-show="$store.sidebar.isMobileOpen" @click="$store.sidebar.setMobileOpen(false)"
-    class="fixed z-50 h-screen w-full bg-gray-900/50"></div>
+    class="fixed inset-0 z-50 bg-gray-900/50 xl:hidden">
+</div>
