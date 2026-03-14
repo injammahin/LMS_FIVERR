@@ -1,9 +1,6 @@
 <!DOCTYPE html>
-<html
-  lang="en"
-  class="h-full"
-  data-sidebar="expanded"
->
+<html lang="en" class="h-full" data-sidebar="expanded">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,65 +13,84 @@
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
   @vite(['resources/css/app.css', 'resources/js/app.js'])
   <style>
-    [x-cloak]{ display:none !important; }
+    [x-cloak] {
+      display: none !important;
+    }
 
     /* Disable transitions/animations during first paint to prevent slide/jump */
-    .preload *, .preload {
+    .preload *,
+    .preload {
       transition: none !important;
       animation: none !important;
     }
 
     /* Pre-apply sidebar padding BEFORE Alpine loads (prevents content jump) */
     @media (min-width: 1280px) {
-      .sidebar-layout { padding-left: 290px; }
-      html[data-sidebar="collapsed"] .sidebar-layout { padding-left: 90px; }
+      .sidebar-layout {
+        padding-left: 290px;
+      }
+
+      html[data-sidebar="collapsed"] .sidebar-layout {
+        padding-left: 90px;
+      }
+    }
+
+    .w-\[290px\] {
+      width: 290px !important;
     }
   </style>
-<style>
-  /* Make native controls (select dropdown, scrollbars, etc.) respect dark mode */
-  html { color-scheme: light; }
-  html.dark { color-scheme: dark; }
+  <style>
+    /* Make native controls (select dropdown, scrollbars, etc.) respect dark mode */
+    html {
+      color-scheme: light;
+    }
 
-  /* Helps some browsers render the dropdown menu in dark */
-  html.dark select,
-  html.dark input,
-  html.dark textarea {
-    color-scheme: dark;
-  }
+    html.dark {
+      color-scheme: dark;
+    }
 
-  /* Optional: force option colors (works in some browsers; harmless in others) */
-  html.dark select option {
-    background: #0b1220; /* slate-ish */
-    color: #e5e7eb;
-  }
-</style>
-<style>
-  /* Dark-mode pagination override (Laravel tailwind links()) */
-  html.dark [aria-label="Pagination Navigation"] a,
-  html.dark [aria-label="Pagination Navigation"] span {
-    background: rgba(255,255,255,0.04) !important;
-    border-color: rgba(255,255,255,0.10) !important;
-    color: rgba(255,255,255,0.75) !important;
-  }
+    /* Helps some browsers render the dropdown menu in dark */
+    html.dark select,
+    html.dark input,
+    html.dark textarea {
+      color-scheme: dark;
+    }
 
-  /* Hover */
-  html.dark [aria-label="Pagination Navigation"] a:hover {
-    background: rgba(255,255,255,0.08) !important;
-    color: #fff !important;
-  }
+    /* Optional: force option colors (works in some browsers; harmless in others) */
+    html.dark select option {
+      background: #0b1220;
+      /* slate-ish */
+      color: #e5e7eb;
+    }
+  </style>
+  <style>
+    /* Dark-mode pagination override (Laravel tailwind links()) */
+    html.dark [aria-label="Pagination Navigation"] a,
+    html.dark [aria-label="Pagination Navigation"] span {
+      background: rgba(255, 255, 255, 0.04) !important;
+      border-color: rgba(255, 255, 255, 0.10) !important;
+      color: rgba(255, 255, 255, 0.75) !important;
+    }
 
-  /* Active page */
-  html.dark [aria-label="Pagination Navigation"] span[aria-current="page"] {
-    background: rgb(37 99 235) !important; /* blue-600 */
-    border-color: rgb(37 99 235) !important;
-    color: #fff !important;
-  }
+    /* Hover */
+    html.dark [aria-label="Pagination Navigation"] a:hover {
+      background: rgba(255, 255, 255, 0.08) !important;
+      color: #fff !important;
+    }
 
-  /* Disabled */
-  html.dark [aria-label="Pagination Navigation"] span[aria-disabled="true"] {
-    opacity: 0.5 !important;
-  }
-</style>
+    /* Active page */
+    html.dark [aria-label="Pagination Navigation"] span[aria-current="page"] {
+      background: rgb(37 99 235) !important;
+      /* blue-600 */
+      border-color: rgb(37 99 235) !important;
+      color: #fff !important;
+    }
+
+    /* Disabled */
+    html.dark [aria-label="Pagination Navigation"] span[aria-disabled="true"] {
+      opacity: 0.5 !important;
+    }
+  </style>
 
   <script>
     // --- prevent theme flash ---
@@ -165,9 +181,7 @@
   </script>
 </head>
 
-<body
-  class="h-full "
-  x-data="{
+<body class="h-full " x-data="{
     uiReady: false,
     minMs: 600,      // minimum loader time (1s)
     start: 0,
@@ -187,15 +201,10 @@
         requestAnimationFrame(() => document.documentElement.classList.remove('preload'));
       }, Math.max(0, remaining));
     }
-  }"
-  x-init="init()"
->
+  }" x-init="init()">
 
   {{-- LOADER (must show minimum 1s) --}}
-  <div
-    class="fixed inset-0 z-[9999] grid place-items-center bg-white dark:bg-slate-950"
-    x-show="!uiReady"
-  >
+  <div class="fixed inset-0 z-[9999] grid place-items-center bg-white dark:bg-slate-950" x-show="!uiReady">
     <div class="flex flex-col items-center gap-3">
       <div class="h-10 w-10 rounded-full border-4 border-slate-200 border-t-orange-500 animate-spin"></div>
       <p class="text-sm text-slate-600 dark:text-white/70">Loading...</p>
@@ -206,14 +215,11 @@
   <div x-cloak x-show="uiReady" class="h-full">
     @include('layouts.sidebar')
 
-    <div
-      class="min-h-screen sidebar-layout transition-all duration-300"
-      :class="{
+    <div class="min-h-screen sidebar-layout transition-all duration-300" :class="{
         'xl:pl-[290px]': ($store.sidebar.isExpanded || $store.sidebar.isHovered) && !$store.sidebar.isMobileOpen,
         'xl:pl-[90px]': (!$store.sidebar.isExpanded && !$store.sidebar.isHovered) && !$store.sidebar.isMobileOpen
-      }"
-    >
-            @include('layouts.app-header')
+      }">
+      @include('layouts.app-header')
 
       <main class="p-4 sm:p-6 lg:p-8">
         @yield('content')
@@ -228,6 +234,7 @@
       var APP_URL = "{{ config('app.url') }}";
     </script>
   </div>
-<x-ai-live-chat />
+  <x-ai-live-chat />
 </body>
+
 </html>
