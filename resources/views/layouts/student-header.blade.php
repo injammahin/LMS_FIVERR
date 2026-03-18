@@ -18,7 +18,7 @@
         // =========================
         $student = auth()->user();
         $divisionId = (int)($student->division_id ?? 0);
-
+        $goldStars = (int) ($student->gold_stars ?? 0);
         $subjectsWithCourses = collect();
         $totalCourses = 0;
 
@@ -45,13 +45,15 @@
         <div class="h-16 flex items-center justify-between">
 
             {{-- Left: Logo/Brand --}}
-            <a href="{{ route('student.dashboard') }}" class="flex items-center gap-3">
+            <div class="hidden sm:block">
+             <a href="{{ route('student.dashboard') }}" class="flex items-center gap-3">
                 <img src="{{ asset('img/logo_lms.png') }}" alt="Logo" class="h-12 w-auto mb-3 object-contain">
                 <div class="leading-tight">
                     <div class="text-sm font-semibold text-gray-900 dark:text-white">Virtual</div>
                     <div class="text-xs text-gray-500 dark:text-white/60">University of Yahweh</div>
                 </div>
             </a>
+            </div>
 
             {{-- Middle: nav links --}}
             <nav class="hidden md:flex items-center gap-6 text-sm">
@@ -218,8 +220,7 @@
                     </svg>
                 </button>
                  <x-student.chat-dropdown />
-
-                {{-- Notifications --}}
+                                 {{-- Notifications --}}
                 <div class="relative" x-data="{ open:false }">
                     <button @click="open=!open"
                             class="relative h-10 w-10 rounded-xl border border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/5 grid place-items-center text-gray-700 dark:text-white/80">
@@ -323,7 +324,7 @@
                         </div>
                     </div>
                 </div>
-
+                
                 {{-- user dropdown --}}
                 <div class="relative" x-data="{ open:false }">
                     <button @click="open=!open"
@@ -359,9 +360,127 @@
                         </form>
                     </div>
                 </div>
+                 <div class="relative" x-data="{ starOpen:false }">
+                    <button
+                        type="button"
+                        @click="starOpen = !starOpen"
+                        class="group relative inline-flex items-center gap-3 rounded-2xl border border-amber-200 dark:border-amber-400/20 bg-white dark:bg-slate-900 px-3 py-2 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+                    >
+                        <span class="relative flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-br from-yellow-300 via-amber-400 to-orange-400 shadow-inner">
+                            <i class="fa-solid fa-star text-white text-sm animate-star-glow"></i>
+
+                            <span class="absolute -top-2 -right-2 min-w-[22px] h-[22px] px-1.5 rounded-full bg-slate-900 text-white text-[11px] font-bold flex items-center justify-center shadow border border-white/20">
+                                {{ $goldStars }}
+                            </span>
+                        </span>
+
+                        <div class="hidden lg:block text-left">
+                            <div class="text-[11px] text-gray-500 dark:text-white/50 leading-none">Reward Wallet</div>
+                            <div class="text-sm font-semibold text-gray-800 dark:text-white">
+                                {{ $goldStars }} Gold {{ $goldStars == 1 ? 'Star' : 'Stars' }}
+                            </div>
+                        </div>
+                    </button>
+
+                    <div
+                        x-show="starOpen"
+                        @click.away="starOpen = false"
+                        x-transition:enter="transition ease-out duration-300"
+                        x-transition:enter-start="opacity-0 translate-y-2 scale-95"
+                        x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                        x-transition:leave="transition ease-in duration-200"
+                        x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                        x-transition:leave-end="opacity-0 translate-y-2 scale-95"
+                        class="absolute right-0 mt-2 w-[320px] rounded-3xl border border-amber-100 dark:border-white/10 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden z-50"
+                        style="display:none;"
+                    >
+                        <div class="relative bg-gradient-to-r from-yellow-300 via-amber-300 to-orange-300 p-5">
+                            <div class="absolute inset-0 opacity-20 pointer-events-none">
+                                <div class="absolute top-3 left-6 text-white text-lg animate-float-soft">⭐</div>
+                                <div class="absolute top-8 right-10 text-white text-sm animate-float-soft" style="animation-delay:.4s;">✨</div>
+                                <div class="absolute bottom-3 left-1/2 text-white text-base animate-float-soft" style="animation-delay:.8s;">⭐</div>
+                            </div>
+
+                            <div class="relative flex items-center gap-4">
+                                <div class="w-16 h-16 rounded-2xl bg-white/70 backdrop-blur flex items-center justify-center shadow-md">
+                                    <i class="fa-solid fa-star text-3xl text-amber-500 animate-star-glow"></i>
+                                </div>
+
+                                <div>
+                                    <p class="text-sm font-medium text-amber-900/80">Your Star Wallet</p>
+                                    <h3 class="text-md font-extrabold text-slate-900">
+                                        {{ $goldStars }}
+                                    </h3>
+                                    <p class="text-sm text-slate-800/80">
+                                        Gold {{ $goldStars == 1 ? 'Star' : 'Stars' }} collected
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-5 space-y-4">
+                            <div class="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
+                                <p class="text-sm font-semibold text-amber-900">
+                                    ⭐ How to earn stars
+                                </p>
+                                <p class="text-sm text-amber-800 mt-1">
+                                    Complete lessons in the Elementary division and collect gold stars.
+                                </p>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-3">
+                                <div class="rounded-2xl bg-slate-50 dark:bg-white/5 p-3 text-center border border-slate-100 dark:border-white/10">
+                                    <div class="text-xs text-gray-500 dark:text-white/60">Total</div>
+                                    <div class="text-md font-bold text-slate-900 dark:text-white">{{ $goldStars }}</div>
+                                </div>
+
+                                <div class="rounded-2xl bg-slate-50 dark:bg-white/5 p-3 text-center border border-slate-100 dark:border-white/10">
+                                    <div class="text-xs text-gray-500 dark:text-white/60">Reward</div>
+                                    <div class="text-md font-bold text-amber-500">+1</div>
+                                </div>
+
+                                <div class="rounded-2xl bg-slate-50 dark:bg-white/5 p-3 text-center border border-slate-100 dark:border-white/10">
+                                    <div class="text-xs text-gray-500 dark:text-white/60">Type</div>
+                                    <div class="text-sm font-bold text-slate-900 dark:text-white">Lesson</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
             </div>
 
         </div>
     </div>
+    <style>
+    @keyframes starGlow {
+        0%, 100% {
+            transform: scale(1) rotate(0deg);
+            filter: drop-shadow(0 0 0 rgba(251, 191, 36, 0));
+        }
+        50% {
+            transform: scale(1.08) rotate(6deg);
+            filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.55));
+        }
+    }
+
+    @keyframes floatSoft {
+        0%, 100% {
+            transform: translateY(0);
+            opacity: .95;
+        }
+        50% {
+            transform: translateY(-8px);
+            opacity: 1;
+        }
+    }
+
+    .animate-star-glow {
+        animation: starGlow 1.8s ease-in-out infinite;
+    }
+
+    .animate-float-soft {
+        animation: floatSoft 3s ease-in-out infinite;
+    }
+</style>
 </header>
