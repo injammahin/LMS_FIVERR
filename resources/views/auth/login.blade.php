@@ -43,7 +43,7 @@
                 <div class="p-7 sm:p-8">
                     {{-- Header --}}
                     <div class="flex flex-col items-center text-center">
-                        <img src="{{ asset('img/logo_lms.png') }}" alt="Logo" class="h-16 w-auto mb-3 object-contain">
+                        <img src="{{ asset('/img/logo_lms.png') }}" alt="Logo" class="h-16 w-auto mb-3 object-contain">
                         <p class="text-sm text-white/70">
                             Log in to continue to your portal
                         </p>

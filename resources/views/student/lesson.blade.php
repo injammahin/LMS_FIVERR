@@ -136,28 +136,31 @@
                         @elseif(($block['type'] ?? '') === 'h5p')
                             @php
                                 $h5pRaw = trim($block['embed'] ?? $block['h5p_embed'] ?? $block['h5p_url'] ?? '');
-                                $isIframeCode = str_contains($h5pRaw, '<iframe');
+                                $h5pSrc = null;
+
+                                if ($h5pRaw) {
+                                    // If full iframe code was pasted, extract only src=""
+                                    if (preg_match('/src=["\']([^"\']+)["\']/', $h5pRaw, $matches)) {
+                                        $h5pSrc = $matches[1];
+                                    } else {
+                                        // Otherwise assume raw value is already a URL
+                                        $h5pSrc = $h5pRaw;
+                                    }
+                                }
                             @endphp
 
                             <div
                                 class="bg-white dark:bg-slate-900 rounded-3xl border border-gray-200 dark:border-white/10 shadow-sm p-6">
                                 <div class="text-sm text-gray-500 dark:text-white/60 mb-3">Interactive Activity</div>
 
-                                @if($h5pRaw)
-                                    @if($isIframeCode)
-                                        <div
-                                            class="rounded-2xl overflow-hidden border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 h5p-wrapper">
-                                            {!! $h5pRaw !!}
-                                        </div>
-                                    @else
-                                        <div
-                                            class="rounded-2xl overflow-hidden border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 h5p-wrapper">
-                                            <iframe src="{{ $h5pRaw }}" class="w-full min-h-[650px]" frameborder="0"
-                                                allowfullscreen="allowfullscreen"
-                                                allow="autoplay *; geolocation *; microphone *; camera *; midi *; encrypted-media *">
-                                            </iframe>
-                                        </div>
-                                    @endif
+                                @if($h5pSrc)
+                                    <div
+                                        class="rounded-2xl overflow-hidden border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 h5p-wrapper">
+                                        <iframe src="{{ $h5pSrc }}" class="w-full h-[700px] block" frameborder="0" allowfullscreen
+                                            loading="lazy"
+                                            allow="autoplay *; geolocation *; microphone *; camera *; midi *; encrypted-media *">
+                                        </iframe>
+                                    </div>
                                 @else
                                     <div class="text-sm text-red-500">
                                         No H5P content found.
@@ -262,7 +265,8 @@
     <style>
         .h5p-wrapper iframe {
             width: 100% !important;
-            min-height: 650px;
+            height: 700px !important;
+            min-height: 700px;
             display: block;
         }
 

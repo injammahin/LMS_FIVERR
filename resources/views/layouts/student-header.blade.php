@@ -47,7 +47,7 @@
             {{-- Left: Logo/Brand --}}
             <div class="hidden sm:block">
              <a href="{{ route('student.dashboard') }}" class="flex items-center gap-3">
-                <img src="{{ asset('img/logo_lms.png') }}" alt="Logo" class="h-12 w-auto mb-3 object-contain">
+                <img src="{{ asset('/img/logo_lms.png') }}" alt="Logo" class="h-12 w-auto mb-3 object-contain">
                 <div class="leading-tight">
                     <div class="text-sm font-semibold text-gray-900 dark:text-white">Virtual</div>
                     <div class="text-xs text-gray-500 dark:text-white/60">University of Yahweh</div>
