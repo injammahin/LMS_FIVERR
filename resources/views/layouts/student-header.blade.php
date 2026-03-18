@@ -46,12 +46,10 @@
 
             {{-- Left: Logo/Brand --}}
             <a href="{{ route('student.dashboard') }}" class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-xl bg-blue-600 text-white grid place-items-center font-bold">
-                    L
-                </div>
+                <img src="{{ asset('img/logo_lms.png') }}" alt="Logo" class="h-12 w-auto mb-3 object-contain">
                 <div class="leading-tight">
-                    <div class="text-sm font-semibold text-gray-900 dark:text-white">LMS</div>
-                    <div class="text-xs text-gray-500 dark:text-white/60">Student Portal</div>
+                    <div class="text-sm font-semibold text-gray-900 dark:text-white">Virtual</div>
+                    <div class="text-xs text-gray-500 dark:text-white/60">University of Yahweh</div>
                 </div>
             </a>
 
