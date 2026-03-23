@@ -8,8 +8,11 @@
         $isViewed = !empty($progress?->viewed_at);
         $backUrl = request('back') ?: url()->previous();
         $goldStars = (int) (auth()->user()->gold_stars ?? 0);
-    @endphp
 
+        // Only show read aloud for actual elementary student
+        // and only if lesson description exists
+        $readAloudEnabled = !empty($showReadAloud) && !empty($lesson->description);
+    @endphp
 
     <div
         class="min-h-screen bg-gradient-to-b from-sky-50 via-white to-amber-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
@@ -65,7 +68,7 @@
                     <div class="relative p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                         <div>
                             <p class="text-xs font-semibold tracking-[0.2em] text-amber-600 uppercase">Elementary Reward</p>
-                            <h3 class="text-sm font-bold text-gray-900 mt-1">Complete this lesson and earn a gold star</h3>
+                            <h3 class="text-md font-bold text-gray-900 mt-1">Complete this lesson and earn a gold star</h3>
                             <p class="text-sm text-gray-600 mt-1">
                                 Every completed elementary lesson gives the student 1 gold star.
                             </p>
@@ -75,11 +78,11 @@
                             class="flex items-center gap-3 rounded-2xl bg-white/80 backdrop-blur px-4 py-3 border border-amber-100 shadow-sm">
                             <div
                                 class="w-12 h-12 rounded-2xl bg-gradient-to-br from-yellow-300 to-amber-500 flex items-center justify-center shadow-inner">
-                                <i class="fa-solid fa-star text-white text-sm"></i>
+                                <i class="fa-solid fa-star text-white text-md"></i>
                             </div>
                             <div>
                                 <div class="text-xs text-gray-500">Your Stars</div>
-                                <div class="text-md font-extrabold text-gray-900">{{ $goldStars }}</div>
+                                <div class="text-lg font-extrabold text-gray-900">{{ $goldStars }}</div>
                             </div>
                         </div>
                     </div>
@@ -92,8 +95,12 @@
                 </div>
             @endif
 
+            @if($readAloudEnabled)
+                <x-student.read-aloud-toolbar target="#lessonDescriptionReadAloudArea" title="Read Aloud" />
+            @endif
+
             @if($lesson->description)
-                <div
+                <div id="lessonDescriptionReadAloudArea"
                     class="bg-white dark:bg-slate-900 rounded-3xl border border-gray-200 dark:border-white/10 shadow-sm p-6 prose max-w-none dark:prose-invert">
                     {!! $lesson->description !!}
                 </div>
@@ -139,11 +146,9 @@
                                 $h5pSrc = null;
 
                                 if ($h5pRaw) {
-                                    // If full iframe code was pasted, extract only src=""
                                     if (preg_match('/src=["\']([^"\']+)["\']/', $h5pRaw, $matches)) {
                                         $h5pSrc = $matches[1];
                                     } else {
-                                        // Otherwise assume raw value is already a URL
                                         $h5pSrc = $h5pRaw;
                                     }
                                 }

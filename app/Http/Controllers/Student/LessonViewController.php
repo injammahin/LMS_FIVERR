@@ -38,16 +38,21 @@ class LessonViewController extends Controller
             ->where('user_id', $user->id)
             ->first();
 
+        $lowestDivisionLevel = (int) Division::min('level');
+
+        // show read aloud ONLY for students whose own assigned division is elementary / lowest level
+        $showReadAloud = (int) $userDivision->level === $lowestDivisionLevel;
+
         $isElementaryRewardDivision = $this->isElementaryRewardDivision($courseDivision);
 
         return view('student.lesson', compact(
             'course',
             'lesson',
             'progress',
-            'isElementaryRewardDivision'
+            'isElementaryRewardDivision',
+            'showReadAloud'
         ));
     }
-
     public function markDone(Request $request, Course $course, Lesson $lesson)
     {
         abort_if((int) $lesson->course_id !== (int) $course->id, 404);
