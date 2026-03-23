@@ -7,24 +7,25 @@ use App\Models\Division;
 use App\Models\LessonProgress;
 use App\Models\QuizAttempt;
 use App\Models\AssignmentSubmission;
+
 class DashboardController extends Controller
 {
     public function index()
     {
         $user = auth()->user();
 
-        // 🔥 STEP 1: Check promotion FIRST
-        $this->checkAutoPromotion($user);
-        $user->refresh(); // VERY IMPORTANT
+        // check promotion first
+        $promotionCelebration = $this->checkAutoPromotion($user);
 
-        // 🔥 STEP 2: Load assigned division AFTER promotion
+        // refresh user after possible promotion
+        $user->refresh();
+
         $assignedDivision = null;
         $assignedSubjectsCount = 0;
         $assignedCoursesCount = 0;
 
         if ($user->division_id) {
-            $assignedDivision = Division::withCount('subjects')
-                ->find($user->division_id);
+            $assignedDivision = Division::withCount('subjects')->find($user->division_id);
 
             if ($assignedDivision) {
                 $assignedSubjectsCount = (int) $assignedDivision->subjects_count;
@@ -35,7 +36,6 @@ class DashboardController extends Controller
             }
         }
 
-        // 🔥 STEP 3: Load divisions
         $divisions = Division::query()
             ->withCount([
                 'subjects',
@@ -46,12 +46,15 @@ class DashboardController extends Controller
             ->orderBy('level')
             ->get();
 
-        // 🔥 STEP 4: Calculate progress AFTER promotion
         $divisionProgress = [];
 
         foreach ($divisions as $division) {
-            $divisionProgress[$division->id] =
-                $this->calculateDivisionProgress($user, $division);
+            $divisionProgress[$division->id] = $this->calculateDivisionProgress($user, $division);
+        }
+
+        // one-time flash
+        if (!empty($promotionCelebration['show'])) {
+            session()->flash('division_unlock_celebration', $promotionCelebration);
         }
 
         return view('student.dashboard', compact(
@@ -63,27 +66,50 @@ class DashboardController extends Controller
             'divisionProgress'
         ));
     }
-    private function checkAutoPromotion($user)
+
+    private function checkAutoPromotion($user): array
     {
         $currentDivision = Division::find($user->division_id);
-        if (!$currentDivision || !$currentDivision->auto_promote) return;
 
-        // calculate completion %
+        if (!$currentDivision || !$currentDivision->auto_promote) {
+            return ['show' => false];
+        }
+
         $stats = $this->calculateDivisionProgress($user, $currentDivision);
 
-        if ($stats['percent'] >= $currentDivision->promotion_percent) {
-
-            // find next level division
-            $nextDivision = Division::where('level', '>', $currentDivision->level)
-                ->orderBy('level')
-                ->first();
-
-            if ($nextDivision) {
-                $user->division_id = $nextDivision->id;
-                $user->save();
-            }
+        if ($stats['percent'] < (int) $currentDivision->promotion_percent) {
+            return ['show' => false];
         }
+
+        $nextDivision = Division::where('level', '>', $currentDivision->level)
+            ->orderBy('level')
+            ->first();
+
+        if (!$nextDivision) {
+            return ['show' => false];
+        }
+
+        // if already promoted, do not show again
+        if ((int) $user->division_id === (int) $nextDivision->id) {
+            return ['show' => false];
+        }
+
+        $fromDivisionId = (int) $currentDivision->id;
+        $toDivisionId = (int) $nextDivision->id;
+
+        $user->division_id = $toDivisionId;
+        $user->save();
+
+        return [
+            'show' => true,
+            'from_division_id' => $fromDivisionId,
+            'from_division_name' => $currentDivision->name,
+            'to_division_id' => $toDivisionId,
+            'to_division_name' => $nextDivision->name,
+            'message' => "Amazing! You completed {$currentDivision->name} and unlocked {$nextDivision->name}.",
+        ];
     }
+
     private function calculateDivisionProgress($user, Division $division)
     {
         $lessonIds = [];
@@ -95,28 +121,40 @@ class DashboardController extends Controller
             ->get();
 
         foreach ($subjects as $sub) {
-            foreach ($sub->courses as $c) {
-                foreach ($c->lessons as $l) $lessonIds[] = $l->id;
-                foreach ($c->quizzes as $qz) $quizIds[] = $qz->id;
-                foreach ($c->assignments as $a) $assignmentIds[] = $a->id;
+            foreach ($sub->courses as $course) {
+                foreach ($course->lessons as $lesson) {
+                    $lessonIds[] = $lesson->id;
+                }
+                foreach ($course->quizzes as $quiz) {
+                    $quizIds[] = $quiz->id;
+                }
+                foreach ($course->assignments as $assignment) {
+                    $assignmentIds[] = $assignment->id;
+                }
             }
         }
 
-        $lessonDone = LessonProgress::where('user_id', $user->id)
-            ->whereIn('lesson_id', $lessonIds)
-            ->whereNotNull('completed_at')
-            ->count();
+        $lessonDone = !empty($lessonIds)
+            ? LessonProgress::where('user_id', $user->id)
+                ->whereIn('lesson_id', $lessonIds)
+                ->whereNotNull('completed_at')
+                ->count()
+            : 0;
 
-        $quizDone = QuizAttempt::where('user_id', $user->id)
-            ->whereIn('quiz_id', $quizIds)
-            ->whereNotNull('submitted_at')
-            ->distinct('quiz_id')
-            ->count('quiz_id');
+        $quizDone = !empty($quizIds)
+            ? QuizAttempt::where('user_id', $user->id)
+                ->whereIn('quiz_id', $quizIds)
+                ->whereNotNull('submitted_at')
+                ->distinct('quiz_id')
+                ->count('quiz_id')
+            : 0;
 
-        $assignmentDone = AssignmentSubmission::where('user_id', $user->id)
-            ->whereIn('assignment_id', $assignmentIds)
-            ->distinct('assignment_id')
-            ->count('assignment_id');
+        $assignmentDone = !empty($assignmentIds)
+            ? AssignmentSubmission::where('user_id', $user->id)
+                ->whereIn('assignment_id', $assignmentIds)
+                ->distinct('assignment_id')
+                ->count('assignment_id')
+            : 0;
 
         $total = count($lessonIds) + count($quizIds) + count($assignmentIds);
         $done = $lessonDone + $quizDone + $assignmentDone;
@@ -129,62 +167,54 @@ class DashboardController extends Controller
             'percent' => $percent,
         ];
     }
+
     public function division(Division $division)
     {
         $user = auth()->user();
         $userDivision = Division::find($user->division_id);
 
         abort_if(!$userDivision, 403);
-
-        // allow access if requested division level <= user level
         abort_if($division->level > $userDivision->level, 403);
 
-        // Load subjects + courses + items (for cards + activity boxes)
         $subjects = $division->subjects()
             ->withCount('courses')
             ->with([
                 'courses' => function ($q) {
                     $q->select('id', 'subject_id', 'title')
-                      ->orderBy('title')
-                      ->with([
-                          'lessons:id,course_id,title,position',
-                          'quizzes:id,course_id,title,pass_mark,max_attempts',
-                          'assignments:id,course_id,title,max_attempts',
-                      ]);
+                        ->orderBy('title')
+                        ->with([
+                            'lessons:id,course_id,title,position',
+                            'quizzes:id,course_id,title,pass_mark,max_attempts',
+                            'assignments:id,course_id,title,max_attempts',
+                        ]);
                 }
             ])
             ->orderBy('name')
             ->get();
 
-        /**
-         * ======================================================
-         * Build big ID lists for ONE QUERY per table (fast)
-         * ======================================================
-         */
         $lessonIds = [];
         $quizIds = [];
         $assignmentIds = [];
 
         foreach ($subjects as $sub) {
-            foreach ($sub->courses as $c) {
-                foreach ($c->lessons as $l) $lessonIds[] = $l->id;
-                foreach ($c->quizzes as $qz) $quizIds[] = $qz->id;
-                foreach ($c->assignments as $a) $assignmentIds[] = $a->id;
+            foreach ($sub->courses as $course) {
+                foreach ($course->lessons as $lesson) {
+                    $lessonIds[] = $lesson->id;
+                }
+                foreach ($course->quizzes as $quiz) {
+                    $quizIds[] = $quiz->id;
+                }
+                foreach ($course->assignments as $assignment) {
+                    $assignmentIds[] = $assignment->id;
+                }
             }
         }
 
-        // Remove duplicates
         $lessonIds = array_values(array_unique($lessonIds));
         $quizIds = array_values(array_unique($quizIds));
         $assignmentIds = array_values(array_unique($assignmentIds));
 
-        /**
-         * ======================================================
-         * Progress maps
-         * ======================================================
-         */
-        // Lesson done map (completed_at)
-        $lessonDoneMap = []; // lesson_id => true
+        $lessonDoneMap = [];
         if (!empty($lessonIds)) {
             $lessonDoneMap = LessonProgress::where('user_id', $user->id)
                 ->whereIn('lesson_id', $lessonIds)
@@ -194,8 +224,7 @@ class DashboardController extends Controller
                 ->toArray();
         }
 
-        // Quiz submitted map (at least 1 submitted attempt)
-        $quizDoneMap = []; // quiz_id => true
+        $quizDoneMap = [];
         if (!empty($quizIds)) {
             $quizDoneMap = QuizAttempt::where('user_id', $user->id)
                 ->whereIn('quiz_id', $quizIds)
@@ -206,8 +235,7 @@ class DashboardController extends Controller
                 ->toArray();
         }
 
-        // Assignment submitted map (at least 1 submission)
-        $assignmentDoneMap = []; // assignment_id => true
+        $assignmentDoneMap = [];
         if (!empty($assignmentIds)) {
             $assignmentDoneMap = AssignmentSubmission::where('user_id', $user->id)
                 ->whereIn('assignment_id', $assignmentIds)
@@ -217,19 +245,14 @@ class DashboardController extends Controller
                 ->toArray();
         }
 
-        /**
-         * ======================================================
-         * TOP DONUTS (overall division)
-         * ======================================================
-         */
         $divisionLessonTotal = count($lessonIds);
-        $divisionLessonDone  = count($lessonDoneMap);
+        $divisionLessonDone = count($lessonDoneMap);
 
         $divisionQuizTotal = count($quizIds);
-        $divisionQuizDone  = count($quizDoneMap);
+        $divisionQuizDone = count($quizDoneMap);
 
         $divisionAssignmentTotal = count($assignmentIds);
-        $divisionAssignmentDone  = count($assignmentDoneMap);
+        $divisionAssignmentDone = count($assignmentDoneMap);
 
         $divisionStats = [
             'lessons_total' => $divisionLessonTotal,
@@ -245,83 +268,79 @@ class DashboardController extends Controller
             'assignments_percent' => $divisionAssignmentTotal > 0 ? round(($divisionAssignmentDone / $divisionAssignmentTotal) * 100) : 0,
         ];
 
-        /**
-         * ======================================================
-         * SUBJECT CARDS:
-         * - progress percent
-         * - activity tiles (small boxes)
-         * - tooltip details
-         * ======================================================
-         */
-        $subjectStats = [];      // subject_id => percent + counts
-        $subjectActivities = []; // subject_id => list items for tooltip + tiles
+        $subjectStats = [];
+        $subjectActivities = [];
 
         foreach ($subjects as $sub) {
-            $subLessonTotal = 0; $subLessonDone = 0;
-            $subQuizTotal = 0;   $subQuizDone = 0;
-            $subAssignTotal = 0; $subAssignDone = 0;
+            $subLessonTotal = 0;
+            $subLessonDone = 0;
+            $subQuizTotal = 0;
+            $subQuizDone = 0;
+            $subAssignTotal = 0;
+            $subAssignDone = 0;
 
-            $activities = []; // list of items for tooltip/tiles
+            $activities = [];
 
             foreach ($sub->courses as $course) {
-
-                // Lessons (ordered)
                 $lessons = $course->lessons->sortBy('position')->values();
-                foreach ($lessons as $l) {
+
+                foreach ($lessons as $lesson) {
                     $subLessonTotal++;
-                    $done = isset($lessonDoneMap[$l->id]);
-                    if ($done) $subLessonDone++;
+                    $done = isset($lessonDoneMap[$lesson->id]);
+                    if ($done) {
+                        $subLessonDone++;
+                    }
 
                     $activities[] = [
                         'type' => 'lesson',
-                        'title' => $l->title,
+                        'title' => $lesson->title,
                         'done' => $done,
                         'course_id' => $course->id,
-                        'id' => $l->id,
+                        'id' => $lesson->id,
                     ];
                 }
 
-                // Quizzes
-                foreach ($course->quizzes as $qz) {
+                foreach ($course->quizzes as $quiz) {
                     $subQuizTotal++;
-                    $done = isset($quizDoneMap[$qz->id]);
-                    if ($done) $subQuizDone++;
+                    $done = isset($quizDoneMap[$quiz->id]);
+                    if ($done) {
+                        $subQuizDone++;
+                    }
 
                     $activities[] = [
                         'type' => 'quiz',
-                        'title' => $qz->title,
+                        'title' => $quiz->title,
                         'done' => $done,
                         'course_id' => $course->id,
-                        'id' => $qz->id,
+                        'id' => $quiz->id,
                     ];
                 }
 
-                // Assignments
-                foreach ($course->assignments as $a) {
+                foreach ($course->assignments as $assignment) {
                     $subAssignTotal++;
-                    $done = isset($assignmentDoneMap[$a->id]);
-                    if ($done) $subAssignDone++;
+                    $done = isset($assignmentDoneMap[$assignment->id]);
+                    if ($done) {
+                        $subAssignDone++;
+                    }
 
                     $activities[] = [
                         'type' => 'assignment',
-                        'title' => $a->title,
+                        'title' => $assignment->title,
                         'done' => $done,
                         'course_id' => $course->id,
-                        'id' => $a->id,
+                        'id' => $assignment->id,
                     ];
                 }
             }
 
-            // overall percent for subject (lessons+quizzes+assignments)
             $subTotal = $subLessonTotal + $subQuizTotal + $subAssignTotal;
-            $subDone  = $subLessonDone + $subQuizDone + $subAssignDone;
+            $subDone = $subLessonDone + $subQuizDone + $subAssignDone;
             $subPercent = $subTotal > 0 ? round(($subDone / $subTotal) * 100) : 0;
 
             $subjectStats[$sub->id] = [
                 'total' => $subTotal,
                 'done' => $subDone,
                 'percent' => $subPercent,
-
                 'lessons_total' => $subLessonTotal,
                 'lessons_done' => $subLessonDone,
                 'quizzes_total' => $subQuizTotal,
@@ -330,7 +349,6 @@ class DashboardController extends Controller
                 'assignments_done' => $subAssignDone,
             ];
 
-            // ✅ show only first 12 boxes (nice UI). Tooltip will show up to 20.
             $subjectActivities[$sub->id] = [
                 'tiles' => array_slice($activities, 0, 12),
                 'tooltip' => array_slice($activities, 0, 20),
