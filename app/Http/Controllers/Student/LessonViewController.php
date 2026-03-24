@@ -9,7 +9,7 @@ use App\Models\LessonProgress;
 use App\Models\Division;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-
+use App\Models\StudentNote;
 class LessonViewController extends Controller
 {
 
@@ -66,6 +66,26 @@ class LessonViewController extends Controller
         $showReadAloud = (int) $userDivision->level === $lowestDivisionLevel;
 
         $isElementaryRewardDivision = $this->isElementaryRewardDivision($courseDivision);
+        $showNotebook = $this->isHighSchoolDivision($userDivision);
+        $quickNotebookNote = null;
+
+        if ($showNotebook) {
+            $quickNotebookNote = StudentNote::firstOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'course_id' => $course->id,
+                    'title' => 'Quick note: ' . $course->title,
+                ],
+                [
+                    'subject_id' => $course->subject_id,
+                    'body_html' => '',
+                    'body_text' => '',
+                    'excerpt' => null,
+                    'is_pinned' => false,
+                    'last_saved_at' => now(),
+                ]
+            );
+        }
 
         return view('student.lesson', compact(
             'course',
@@ -73,7 +93,9 @@ class LessonViewController extends Controller
             'progress',
             'isElementaryRewardDivision',
             'showReadAloud',
-            'showClickDefine'
+            'showClickDefine',
+            'showNotebook',
+            'quickNotebookNote',
         ));
     }
     public function markDone(Request $request, Course $course, Lesson $lesson)
@@ -157,5 +179,27 @@ class LessonViewController extends Controller
         $lowestLevel = (int) Division::min('level');
 
         return (int) $division->level === $lowestLevel;
+    }
+    private function isHighSchoolDivision(?Division $division): bool
+    {
+        if (!$division) {
+            return false;
+        }
+
+        $name = strtolower((string) $division->name);
+
+        if (str_contains($name, 'high')) {
+            return true;
+        }
+
+        $levels = Division::orderBy('level')->pluck('level')->values();
+
+        if ($levels->count() < 3) {
+            return false;
+        }
+
+        $middleLevel = (int) $levels[1];
+
+        return (int) $division->level > $middleLevel;
     }
 }

@@ -330,3 +330,27 @@
     border-color: rgba(255, 255, 255, 0.08);
     color: #ddd6fe;
 }
+
+.note-editor-shell .ql-toolbar.ql-snow {
+    border: 1px solid #e5e7eb;
+    border-radius: 18px 18px 0 0;
+    background: #ffffff;
+}
+
+.note-editor-shell .ql-container.ql-snow {
+    border: 1px solid #e5e7eb;
+    border-top: 0;
+    border-radius: 0 0 18px 18px;
+    background: #ffffff;
+    min-height: 360px;
+    font-size: 15px;
+    color: #111827;
+}
+
+.quick-note-shell .ql-container.ql-snow {
+    min-height: 220px;
+}
+
+.notebook-drawer {
+    box-shadow: -24px 0 60px rgba(15, 23, 42, 0.18);
+}

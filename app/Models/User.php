@@ -86,6 +86,10 @@ class User extends Authenticatable
     {
         return $this->hasMany(\App\Models\Message::class,'receiver_id');
     }
+    public function studentNotes()
+    {
+        return $this->hasMany(\App\Models\StudentNote::class);
+    }
     public function courses()
     {
         return $this->belongsToMany(

@@ -26,6 +26,7 @@ use App\Http\Controllers\ChatController;
 use App\Http\Controllers\Admin\AiTrainingController;
 use App\Http\Controllers\Admin\AiTrainingFileController;
 use App\Http\Controllers\Student\DictionaryLookupController;
+use App\Http\Controllers\Student\NotebookController;
 
 
 /*
@@ -201,6 +202,15 @@ Route::middleware(['auth', 'role:student','active'])
             ->name('chat.users');
         Route::get('/chat/{id}', [ChatController::class,'chat'])
             ->name('chat.view');
+        Route::get('/notebook', [NotebookController::class, 'index'])->name('notebook.index');
+        Route::post('/notebook', [NotebookController::class, 'store'])->name('notebook.store');
+        Route::post('/notebook/{note}/autosave', [NotebookController::class, 'autosave'])->name('notebook.autosave');
+        Route::delete('/notebook/{note}', [NotebookController::class, 'destroy'])->name('notebook.destroy');
+
+        Route::post('/notebook/{note}/attachments', [NotebookController::class, 'uploadAttachment'])->name('notebook.attachments.store');
+        Route::delete('/notebook/attachments/{attachment}', [NotebookController::class, 'destroyAttachment'])->name('notebook.attachments.destroy');
+
+        Route::get('/notebook/{note}/export/{format}', [NotebookController::class, 'export'])->name('notebook.export');
     });
 
 use App\Http\Controllers\Teacher\SubmissionController;

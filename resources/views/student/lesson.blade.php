@@ -405,4 +405,10 @@
             });
         </script>
     @endif
+    @if(!empty($showNotebook) && !empty($quickNotebookNote))
+        @include('student.notebook.quick-panel', [
+            'note' => $quickNotebookNote,
+            'course' => $course
+        ])
+    @endif
 @endsection

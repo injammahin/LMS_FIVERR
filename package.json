@@ -21,6 +21,7 @@
         "@shadcn/ui": "^0.0.4",
         "autoprefixer": "^10.4.24",
         "chart.js": "^4.5.1",
+        "quill": "^2.0.3",
         "tailwindcss": "^4.2.1"
     }
 }
