@@ -8,10 +8,9 @@
         $isViewed = !empty($progress?->viewed_at);
         $backUrl = request('back') ?: url()->previous();
         $goldStars = (int) (auth()->user()->gold_stars ?? 0);
-
-        // Only show read aloud for actual elementary student
-        // and only if lesson description exists
         $readAloudEnabled = !empty($showReadAloud) && !empty($lesson->description);
+        $clickDefineEnabled = !empty($showClickDefine);
+
     @endphp
 
     <div
@@ -98,9 +97,12 @@
             @if($readAloudEnabled)
                 <x-student.read-aloud-toolbar target="#lessonDescriptionReadAloudArea" title="Read Aloud" />
             @endif
+            @if($clickDefineEnabled)
+                <x-student.click-define-toolbar title="Click to Define" />
+            @endif
 
             @if($lesson->description)
-                <div id="lessonDescriptionReadAloudArea"
+                <div id="lessonDescriptionReadAloudArea" data-define-area
                     class="bg-white dark:bg-slate-900 rounded-3xl border border-gray-200 dark:border-white/10 shadow-sm p-6 prose max-w-none dark:prose-invert">
                     {!! $lesson->description !!}
                 </div>
@@ -113,7 +115,7 @@
                     @foreach($blocks as $block)
 
                         @if(($block['type'] ?? '') === 'text')
-                            <div
+                            <div data-define-area
                                 class="bg-white dark:bg-slate-900 rounded-3xl border border-gray-200 dark:border-white/10 shadow-sm p-6">
                                 <div class="text-sm text-gray-500 dark:text-white/60 mb-2">Text</div>
                                 <div class="prose max-w-none dark:prose-invert">

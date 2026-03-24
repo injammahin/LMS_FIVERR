@@ -122,3 +122,211 @@
     background: #facc15;
     color: #0f172a;
 }
+
+/* =========================
+   Click to Define
+========================= */
+
+.define-toolbar {
+    background:
+        radial-gradient(circle at top right, rgba(124, 58, 237, 0.10), transparent 24%),
+        radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.06), transparent 24%),
+        #ffffff;
+}
+
+.define-toolbar-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 20px;
+    display: grid;
+    place-items: center;
+    color: white;
+    font-size: 22px;
+    background: linear-gradient(135deg, #8b5cf6, #4f46e5);
+    box-shadow: 0 14px 30px rgba(79, 70, 229, 0.24);
+    flex-shrink: 0;
+}
+
+.define-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid #e9d5ff;
+    background: #faf5ff;
+    color: #6d28d9;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.define-word {
+    cursor: pointer;
+    border-radius: 8px;
+    padding: 0 2px;
+    transition: background-color 0.16s ease, box-shadow 0.16s ease, color 0.16s ease;
+}
+
+.define-word:hover {
+    background: #ede9fe;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.10);
+}
+
+.define-word-active {
+    background: #ddd6fe;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.16);
+    color: #312e81;
+}
+
+.define-popup {
+    position: fixed;
+    z-index: 9999;
+    width: min(360px, calc(100vw - 24px));
+    border-radius: 22px;
+    border: 1px solid #e9d5ff;
+    background: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.16);
+    padding: 16px;
+}
+
+.define-popup-header {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.define-popup-word {
+    font-size: 20px;
+    font-weight: 800;
+    color: #111827;
+    line-height: 1.1;
+}
+
+.define-popup-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.define-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    background: #f5f3ff;
+    color: #6d28d9;
+    border: 1px solid #e9d5ff;
+}
+
+.define-close-btn,
+.define-audio-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    border: 1px solid #ede9fe;
+    background: white;
+    color: #6d28d9;
+    transition: all 0.2s ease;
+}
+
+.define-close-btn:hover,
+.define-audio-btn:hover {
+    background: #f5f3ff;
+}
+
+.define-popup-body {
+    margin-top: 14px;
+}
+
+.define-section-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #8b5cf6;
+    margin-bottom: 6px;
+}
+
+.define-definition {
+    font-size: 14px;
+    line-height: 1.7;
+    color: #334155;
+}
+
+.define-example {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: #faf5ff;
+    border: 1px solid #ede9fe;
+    font-size: 13px;
+    color: #5b21b6;
+    line-height: 1.6;
+}
+
+.define-loading,
+.define-error {
+    font-size: 14px;
+    color: #475569;
+}
+
+.dark .define-toolbar {
+    background:
+        radial-gradient(circle at top right, rgba(124, 58, 237, 0.16), transparent 24%),
+        radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.10), transparent 24%),
+        rgb(15 23 42);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .define-chip {
+    background: rgba(139, 92, 246, 0.12);
+    border-color: rgba(196, 181, 253, 0.16);
+    color: #ddd6fe;
+}
+
+.dark .define-word:hover {
+    background: rgba(139, 92, 246, 0.18);
+}
+
+.dark .define-word-active {
+    background: rgba(139, 92, 246, 0.26);
+    color: #f5f3ff;
+}
+
+.dark .define-popup {
+    background: rgba(15, 23, 42, 0.96);
+    border-color: rgba(196, 181, 253, 0.14);
+}
+
+.dark .define-popup-word {
+    color: white;
+}
+
+.dark .define-definition,
+.dark .define-loading,
+.dark .define-error {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.dark .define-example {
+    background: rgba(139, 92, 246, 0.14);
+    border-color: rgba(196, 181, 253, 0.12);
+    color: #ddd6fe;
+}
+
+.dark .define-close-btn,
+.dark .define-audio-btn {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #ddd6fe;
+}

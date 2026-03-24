@@ -25,6 +25,7 @@ use App\Http\Controllers\AiChatController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\Admin\AiTrainingController;
 use App\Http\Controllers\Admin\AiTrainingFileController;
+use App\Http\Controllers\Student\DictionaryLookupController;
 
 
 /*
@@ -161,6 +162,8 @@ Route::middleware(['auth', 'role:student','active'])
       ->scopeBindings()
     ->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+            Route::get('/dictionary/lookup', [DictionaryLookupController::class, 'lookup'])
+        ->name('dictionary.lookup');
 
         // This is where a student enters their division content
         Route::get('/division/{division}', [DashboardController::class, 'division'])

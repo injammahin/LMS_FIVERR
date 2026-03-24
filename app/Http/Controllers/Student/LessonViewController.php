@@ -12,6 +12,28 @@ use Illuminate\Support\Facades\DB;
 
 class LessonViewController extends Controller
 {
+
+        private function isMiddleSchoolDivision(?Division $division): bool
+    {
+        if (!$division) {
+            return false;
+        }
+
+        $name = strtolower((string) $division->name);
+        if (str_contains($name, 'middle')) {
+            return true;
+        }
+
+        $levels = Division::orderBy('level')->pluck('level')->values();
+
+        if ($levels->count() < 2) {
+            return false;
+        }
+
+        $middleLevel = (int) $levels[1];
+
+        return (int) $division->level === $middleLevel;
+    }
     public function show(Course $course, Lesson $lesson)
     {
         abort_if((int) $lesson->course_id !== (int) $course->id, 404);
@@ -28,7 +50,7 @@ class LessonViewController extends Controller
         abort_if(!$courseDivision, 404);
 
         abort_if((int) $courseDivision->level > (int) $userDivision->level, 403);
-
+       $showClickDefine = $this->isMiddleSchoolDivision($userDivision);
         LessonProgress::updateOrCreate(
             ['lesson_id' => $lesson->id, 'user_id' => $user->id],
             ['viewed_at' => now()]
@@ -50,7 +72,8 @@ class LessonViewController extends Controller
             'lesson',
             'progress',
             'isElementaryRewardDivision',
-            'showReadAloud'
+            'showReadAloud',
+            'showClickDefine'
         ));
     }
     public function markDone(Request $request, Course $course, Lesson $lesson)
