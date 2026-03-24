@@ -1,3 +1,23 @@
+const INTERACTIVE_SELECTOR = [
+    'a',
+    'button',
+    'input',
+    'textarea',
+    'select',
+    'option',
+    'label',
+    'iframe',
+    'audio',
+    'video',
+    'img',
+    'svg',
+    'canvas',
+    'code',
+    'pre',
+    '[contenteditable="true"]',
+    '[data-define-skip]'
+].join(',');
+
 const WORD_REGEX = /[\p{L}\p{N}]+(?:['’\-][\p{L}\p{N}]+)*/gu;
 
 function cleanTerm(text = '') {
@@ -7,22 +27,122 @@ function cleanTerm(text = '') {
         .trim();
 }
 
+function isInsideArea(node, area) {
+    if (!node || !area) return false;
+    const el = node.nodeType === 1 ? node : node.parentElement;
+    return !!el && area.contains(el);
+}
+
+function isInteractiveTarget(target) {
+    return !!target.closest(INTERACTIVE_SELECTOR);
+}
+
+function getRangeFromPoint(x, y) {
+    if (document.caretPositionFromPoint) {
+        const pos = document.caretPositionFromPoint(x, y);
+        if (!pos || !pos.offsetNode) return null;
+
+        const range = document.createRange();
+        range.setStart(pos.offsetNode, pos.offset);
+        range.setEnd(pos.offsetNode, pos.offset);
+        return range;
+    }
+
+    if (document.caretRangeFromPoint) {
+        return document.caretRangeFromPoint(x, y);
+    }
+
+    return null;
+}
+
+function getWordAtPoint(x, y, area) {
+    const pointRange = getRangeFromPoint(x, y);
+    if (!pointRange) return null;
+
+    const node = pointRange.startContainer;
+    const offset = pointRange.startOffset;
+
+    if (!isInsideArea(node, area)) return null;
+    if (node.nodeType !== Node.TEXT_NODE) return null;
+
+    const parent = node.parentElement;
+    if (!parent || parent.closest(INTERACTIVE_SELECTOR)) return null;
+
+    const text = node.textContent || '';
+    if (!text.trim()) return null;
+
+    WORD_REGEX.lastIndex = 0;
+    let match;
+
+    while ((match = WORD_REGEX.exec(text)) !== null) {
+        const start = match.index;
+        const end = start + match[0].length;
+
+        if (offset >= start && offset <= end) {
+            const wordRange = document.createRange();
+            wordRange.setStart(node, start);
+            wordRange.setEnd(node, end);
+
+            const rect = wordRange.getBoundingClientRect();
+            const term = cleanTerm(match[0]);
+
+            if (!term) return null;
+
+            return {
+                term,
+                rect,
+                range: wordRange
+            };
+        }
+    }
+
+    return null;
+}
+
+function getSelectedTextInArea(area) {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return null;
+
+    const range = selection.getRangeAt(0);
+    const text = cleanTerm(selection.toString());
+
+    if (!text) return null;
+    if (text.length > 40) return null;
+
+    const common = range.commonAncestorContainer;
+    if (!isInsideArea(common, area)) return null;
+
+    const startEl = range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement;
+    if (startEl && startEl.closest(INTERACTIVE_SELECTOR)) return null;
+
+    const rect = range.getBoundingClientRect();
+    if (!rect || (!rect.width && !rect.height)) return null;
+
+    return {
+        term: text,
+        rect,
+        range
+    };
+}
+
 function positionPopup(popup, rect) {
     const gap = 12;
     const popupWidth = Math.min(360, window.innerWidth - 24);
+
     let left = rect.left + (rect.width / 2) - (popupWidth / 2);
     left = Math.max(12, Math.min(left, window.innerWidth - popupWidth - 12));
 
-    let top = rect.bottom + gap;
+    popup.style.left = `${left}px`;
+    popup.style.display = 'block';
 
-    const estimatedHeight = popup.offsetHeight || 220;
-    if (top + estimatedHeight > window.innerHeight - 12) {
-        top = rect.top - estimatedHeight - gap;
+    const measuredHeight = popup.offsetHeight || 220;
+
+    let top = rect.bottom + gap;
+    if (top + measuredHeight > window.innerHeight - 12) {
+        top = rect.top - measuredHeight - gap;
     }
 
     top = Math.max(12, top);
-
-    popup.style.left = `${left}px`;
     popup.style.top = `${top}px`;
 }
 
@@ -30,57 +150,53 @@ class ClickDefineController {
     constructor() {
         this.cache = new Map();
         this.popup = this.createPopup();
-        this.activeWordEl = null;
+        this.currentAudio = null;
+        this.activeArea = null;
+        this.mouseUpTimer = null;
 
-        this.initAreas();
+        this.areas = [...document.querySelectorAll('[data-define-area]')];
+        if (!this.areas.length) return;
+
         this.bindEvents();
     }
 
-    initAreas() {
-        const areas = document.querySelectorAll('[data-define-area]');
-        areas.forEach((area) => {
-            if (area.dataset.definePrepared === 'true') return;
-            this.wrapWords(area);
-            area.dataset.definePrepared = 'true';
-        });
-    }
-
     bindEvents() {
-        document.addEventListener('click', async (event) => {
-            const wordEl = event.target.closest('.define-word');
+        this.areas.forEach((area) => {
+            area.addEventListener('click', async (event) => {
+                if (isInteractiveTarget(event.target)) return;
 
-            if (wordEl) {
-                event.preventDefault();
-                const term = cleanTerm(wordEl.dataset.term || wordEl.textContent || '');
-                if (!term) return;
+                const selection = window.getSelection();
+                if (selection && !selection.isCollapsed && cleanTerm(selection.toString())) {
+                    return;
+                }
 
-                this.setActiveWord(wordEl);
-                const rect = wordEl.getBoundingClientRect();
-                await this.showDefinition(term, rect);
-                return;
-            }
+                const word = getWordAtPoint(event.clientX, event.clientY, area);
+                if (!word) return;
 
-            const clickedInsidePopup = event.target.closest('#dictionaryDefinePopup');
-            if (!clickedInsidePopup) {
+                this.activeArea = area;
+                await this.showDefinition(word.term, word.rect);
+            });
+
+            area.addEventListener('mouseup', () => {
+                clearTimeout(this.mouseUpTimer);
+
+                this.mouseUpTimer = setTimeout(async () => {
+                    const selected = getSelectedTextInArea(area);
+                    if (!selected) return;
+
+                    this.activeArea = area;
+                    await this.showDefinition(selected.term, selected.rect);
+                }, 20);
+            });
+        });
+
+        document.addEventListener('click', (event) => {
+            const insidePopup = event.target.closest('#dictionaryDefinePopup');
+            const insideArea = event.target.closest('[data-define-area]');
+
+            if (!insidePopup && !insideArea) {
                 this.hidePopup();
             }
-        });
-
-        document.addEventListener('mouseup', async () => {
-            const selection = window.getSelection();
-            if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return;
-
-            const range = selection.getRangeAt(0);
-            const selectedText = cleanTerm(selection.toString());
-
-            if (!selectedText) return;
-            if (selectedText.length > 40) return;
-
-            const anchorNode = selection.anchorNode?.parentElement;
-            if (!anchorNode || !anchorNode.closest('[data-define-area]')) return;
-
-            const rect = range.getBoundingClientRect();
-            await this.showDefinition(selectedText, rect);
         });
 
         document.addEventListener('keydown', (event) => {
@@ -93,64 +209,6 @@ class ClickDefineController {
         window.addEventListener('resize', () => this.hidePopup());
     }
 
-    wrapWords(container) {
-        const skipTags = ['SCRIPT', 'STYLE', 'NOSCRIPT', 'IFRAME', 'AUDIO', 'VIDEO', 'SVG', 'CANVAS', 'INPUT', 'TEXTAREA', 'SELECT', 'OPTION', 'BUTTON'];
-
-        const walker = document.createTreeWalker(
-            container,
-            NodeFilter.SHOW_TEXT,
-            {
-                acceptNode: (node) => {
-                    if (!node.nodeValue || !node.nodeValue.trim()) {
-                        return NodeFilter.FILTER_REJECT;
-                    }
-
-                    const parent = node.parentElement;
-                    if (!parent) return NodeFilter.FILTER_REJECT;
-                    if (parent.closest('[data-define-skip]')) return NodeFilter.FILTER_REJECT;
-                    if (skipTags.includes(parent.tagName)) return NodeFilter.FILTER_REJECT;
-                    if (parent.classList.contains('define-word')) return NodeFilter.FILTER_REJECT;
-
-                    return NodeFilter.FILTER_ACCEPT;
-                }
-            }
-        );
-
-        const textNodes = [];
-        while (walker.nextNode()) {
-            textNodes.push(walker.currentNode);
-        }
-
-        textNodes.forEach((textNode) => {
-            const text = textNode.nodeValue;
-            const fragment = document.createDocumentFragment();
-
-            let lastIndex = 0;
-            WORD_REGEX.lastIndex = 0;
-
-            let match;
-            while ((match = WORD_REGEX.exec(text)) !== null) {
-                if (match.index > lastIndex) {
-                    fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
-                }
-
-                const span = document.createElement('span');
-                span.className = 'define-word';
-                span.dataset.term = match[0];
-                span.textContent = match[0];
-                fragment.appendChild(span);
-
-                lastIndex = match.index + match[0].length;
-            }
-
-            if (lastIndex < text.length) {
-                fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
-            }
-
-            textNode.parentNode.replaceChild(fragment, textNode);
-        });
-    }
-
     createPopup() {
         const popup = document.createElement('div');
         popup.id = 'dictionaryDefinePopup';
@@ -160,27 +218,10 @@ class ClickDefineController {
         return popup;
     }
 
-    setActiveWord(el) {
-        if (this.activeWordEl) {
-            this.activeWordEl.classList.remove('define-word-active');
-        }
-
-        this.activeWordEl = el;
-        this.activeWordEl?.classList.add('define-word-active');
-    }
-
-    clearActiveWord() {
-        if (this.activeWordEl) {
-            this.activeWordEl.classList.remove('define-word-active');
-        }
-        this.activeWordEl = null;
-    }
-
     async showDefinition(term, rect) {
         this.popup.innerHTML = `
             <div class="define-loading">Looking up <strong>${this.escapeHtml(term)}</strong>...</div>
         `;
-        this.popup.style.display = 'block';
         positionPopup(this.popup, rect);
 
         try {
@@ -200,6 +241,7 @@ class ClickDefineController {
 
     async fetchDefinition(term) {
         const key = term.toLowerCase();
+
         if (this.cache.has(key)) {
             return this.cache.get(key);
         }
@@ -217,6 +259,7 @@ class ClickDefineController {
 
         const data = await response.json();
         this.cache.set(key, data);
+
         return data;
     }
 
@@ -273,18 +316,25 @@ class ClickDefineController {
         this.popup.querySelector('[data-define-audio]')?.addEventListener('click', (event) => {
             const src = event.currentTarget.getAttribute('data-define-audio');
             if (!src) return;
+
+            if (this.currentAudio) {
+                this.currentAudio.pause();
+                this.currentAudio.currentTime = 0;
+            }
+
             const audio = new Audio(src.startsWith('//') ? `https:${src}` : src);
+            this.currentAudio = audio;
             audio.play().catch(() => { });
         });
     }
 
     hidePopup() {
         this.popup.style.display = 'none';
-        this.clearActiveWord();
 
-        const selection = window.getSelection();
-        if (selection && selection.rangeCount > 0) {
-            selection.removeAllRanges();
+        if (this.currentAudio) {
+            this.currentAudio.pause();
+            this.currentAudio.currentTime = 0;
+            this.currentAudio = null;
         }
     }
 
@@ -299,8 +349,8 @@ class ClickDefineController {
 }
 
 function initClickDefine() {
-    if (document.documentElement.dataset.clickDefineInitialized === 'true') return;
-    document.documentElement.dataset.clickDefineInitialized = 'true';
+    if (window.__clickDefineControllerInitialized) return;
+    window.__clickDefineControllerInitialized = true;
     new ClickDefineController();
 }
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
+use App\Models\Division;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
@@ -10,6 +11,11 @@ class DictionaryLookupController extends Controller
 {
     public function lookup(Request $request)
     {
+        $user = auth()->user();
+        $userDivision = Division::find($user->division_id);
+
+        abort_unless($this->isMiddleSchoolDivision($userDivision), 403, 'Dictionary is only available for middle school students.');
+
         $term = trim((string) $request->query('term', ''));
 
         if ($term === '') {
@@ -18,14 +24,12 @@ class DictionaryLookupController extends Controller
             ], 422);
         }
 
-        // keep it safe and focused for school text usage
         if (mb_strlen($term) > 60) {
             return response()->json([
                 'message' => 'Selected text is too long.'
             ], 422);
         }
 
-        // normalize spaces
         $term = preg_replace('/\s+/', ' ', $term);
 
         $response = Http::timeout(8)
@@ -88,5 +92,28 @@ class DictionaryLookupController extends Controller
             'definition' => $definition,
             'example' => $example,
         ]);
+    }
+
+    private function isMiddleSchoolDivision(?Division $division): bool
+    {
+        if (!$division) {
+            return false;
+        }
+
+        $name = strtolower((string) $division->name);
+
+        if (str_contains($name, 'middle')) {
+            return true;
+        }
+
+        $levels = Division::orderBy('level')->pluck('level')->values();
+
+        if ($levels->count() < 2) {
+            return false;
+        }
+
+        $middleLevel = (int) $levels[1];
+
+        return (int) $division->level === $middleLevel;
     }
 }

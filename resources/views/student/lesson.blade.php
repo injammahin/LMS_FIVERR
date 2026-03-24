@@ -10,7 +10,6 @@
         $goldStars = (int) (auth()->user()->gold_stars ?? 0);
         $readAloudEnabled = !empty($showReadAloud) && !empty($lesson->description);
         $clickDefineEnabled = !empty($showClickDefine);
-
     @endphp
 
     <div
@@ -97,14 +96,17 @@
             @if($readAloudEnabled)
                 <x-student.read-aloud-toolbar target="#lessonDescriptionReadAloudArea" title="Read Aloud" />
             @endif
+
             @if($clickDefineEnabled)
                 <x-student.click-define-toolbar title="Click to Define" />
             @endif
 
             @if($lesson->description)
-                <div id="lessonDescriptionReadAloudArea" data-define-area
-                    class="bg-white dark:bg-slate-900 rounded-3xl border border-gray-200 dark:border-white/10 shadow-sm p-6 prose max-w-none dark:prose-invert">
-                    {!! $lesson->description !!}
+                <div class="bg-white dark:bg-slate-900 rounded-3xl border border-gray-200 dark:border-white/10 shadow-sm p-6">
+                    <div id="lessonDescriptionReadAloudArea" @if($clickDefineEnabled) data-define-area @endif
+                        class="prose max-w-none dark:prose-invert">
+                        {!! $lesson->description !!}
+                    </div>
                 </div>
             @endif
 
@@ -115,10 +117,11 @@
                     @foreach($blocks as $block)
 
                         @if(($block['type'] ?? '') === 'text')
-                            <div data-define-area
+                            <div
                                 class="bg-white dark:bg-slate-900 rounded-3xl border border-gray-200 dark:border-white/10 shadow-sm p-6">
                                 <div class="text-sm text-gray-500 dark:text-white/60 mb-2">Text</div>
-                                <div class="prose max-w-none dark:prose-invert">
+
+                                <div @if($clickDefineEnabled) data-define-area @endif class="prose max-w-none dark:prose-invert">
                                     {!! nl2br(e($block['text'] ?? '')) !!}
                                 </div>
                             </div>
@@ -127,19 +130,26 @@
                             <div
                                 class="bg-white dark:bg-slate-900 rounded-3xl border border-gray-200 dark:border-white/10 shadow-sm p-6">
                                 <div class="text-sm text-gray-500 dark:text-white/60 mb-2">Video</div>
-                                <a href="{{ $block['video_url'] ?? '#' }}" target="_blank" class="text-blue-600 underline break-all">
-                                    {{ $block['video_url'] ?? '' }}
-                                </a>
+
+                                <div data-define-skip>
+                                    <a href="{{ $block['video_url'] ?? '#' }}" target="_blank"
+                                        class="text-blue-600 underline break-all">
+                                        {{ $block['video_url'] ?? '' }}
+                                    </a>
+                                </div>
                             </div>
 
                         @elseif(($block['type'] ?? '') === 'file')
                             <div
                                 class="bg-white dark:bg-slate-900 rounded-3xl border border-gray-200 dark:border-white/10 shadow-sm p-6">
                                 <div class="text-sm text-gray-500 dark:text-white/60 mb-2">File</div>
-                                <a class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700"
-                                    href="{{ asset('storage/' . ($block['path'] ?? '')) }}" target="_blank">
-                                    <i class="fa-solid fa-download"></i> Download file
-                                </a>
+
+                                <div data-define-skip>
+                                    <a class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700"
+                                        href="{{ asset('storage/' . ($block['path'] ?? '')) }}" target="_blank">
+                                        <i class="fa-solid fa-download"></i> Download file
+                                    </a>
+                                </div>
                             </div>
 
                         @elseif(($block['type'] ?? '') === 'h5p')
@@ -161,7 +171,7 @@
                                 <div class="text-sm text-gray-500 dark:text-white/60 mb-3">Interactive Activity</div>
 
                                 @if($h5pSrc)
-                                    <div
+                                    <div data-define-skip
                                         class="rounded-2xl overflow-hidden border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 h5p-wrapper">
                                         <iframe src="{{ $h5pSrc }}" class="w-full h-[700px] block" frameborder="0" allowfullscreen
                                             loading="lazy"

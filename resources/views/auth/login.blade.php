@@ -16,9 +16,9 @@
 
         {{-- subtle grid --}}
         <div class="pointer-events-none absolute inset-0 opacity-[0.08]" style="background-image:
-                                                linear-gradient(to right, rgba(255,255,255,.20) 1px, transparent 1px),
-                                                linear-gradient(to bottom, rgba(255,255,255,.20) 1px, transparent 1px);
-                                                background-size: 42px 42px;"></div>
+                                                    linear-gradient(to right, rgba(255,255,255,.20) 1px, transparent 1px),
+                                                    linear-gradient(to bottom, rgba(255,255,255,.20) 1px, transparent 1px);
+                                                    background-size: 42px 42px;"></div>
 
         {{-- Floating particles --}}
         <div class="pointer-events-none absolute inset-0 overflow-hidden">
@@ -73,9 +73,9 @@
                                 </span>
                                 <x-text-input id="login"
                                     class="block w-full rounded-2xl border border-white/10 bg-white/10 text-white placeholder:text-white/40 pl-10 pr-3 py-3
-                                                                           focus:ring-2 focus:ring-white/20 focus:border-white/20" type="text"
-                                    name="login" :value="old('login')" required autofocus autocomplete="username"
-                                    placeholder="Enter email or username" />
+                                                                               focus:ring-2 focus:ring-white/20 focus:border-white/20"
+                                    type="text" name="login" :value="old('login')" required autofocus
+                                    autocomplete="username" placeholder="Enter email or username" />
                             </div>
                             <x-input-error :messages="$errors->get('login')" class="mt-2 text-sm text-red-300" />
                         </div>
@@ -90,7 +90,7 @@
 
                                 <input id="password"
                                     class="block w-full rounded-2xl border border-white/10 bg-white/10 text-white placeholder:text-white/40 pl-10 pr-11 py-3
-                                                                           focus:ring-2 focus:ring-white/20 focus:border-white/20"
+                                                                               focus:ring-2 focus:ring-white/20 focus:border-white/20"
                                     :type="show ? 'text' : 'password'" name="password" required
                                     autocomplete="current-password" placeholder="Enter your password" />
 
@@ -123,7 +123,7 @@
                         {{-- Submit --}}
                         <button type="submit"
                             class="group relative w-full overflow-hidden rounded-2xl px-5 py-3 text-sm font-semibold text-white
-                                                                       shadow-[0_12px_28px_rgba(0,0,0,.35)] border border-white/10"
+                                                                           shadow-[0_12px_28px_rgba(0,0,0,.35)] border border-white/10"
                             id="loginBtn">
                             <span class="absolute inset-0 opacity-90" id="btnGradient"></span>
                             <span class="absolute inset-0 opacity-0 group-hover:opacity-100 transition"
@@ -256,16 +256,16 @@
 
                 // Background: layered gradients
                 bg.style.background = `
-                                                    radial-gradient(1200px circle at 20% 20%, rgba(255,255,255,.16), transparent 55%),
-                                                    radial-gradient(900px circle at 80% 80%, rgba(255,255,255,.10), transparent 55%),
-                                                    linear-gradient(120deg, ${pick.bg[0]}, ${pick.bg[1]}, ${pick.bg[2]})
-                                                `;
+                                                        radial-gradient(1200px circle at 20% 20%, rgba(255,255,255,.16), transparent 55%),
+                                                        radial-gradient(900px circle at 80% 80%, rgba(255,255,255,.10), transparent 55%),
+                                                        linear-gradient(120deg, ${pick.bg[0]}, ${pick.bg[1]}, ${pick.bg[2]})
+                                                    `;
 
                 // Button gradient
                 btn.style.background = `linear-gradient(90deg, ${pick.btn[0]}, ${pick.btn[1]})`;
 
                 // Logo chip gradient
-                chip.style.background = `linear-gradient(135deg, ${pick.btn[0]}, ${pick.btn[1]})`;
+                // chip.style.background = `linear-gradient(135deg, ${pick.btn[0]}, ${pick.btn[1]})`;
             })();
         </script>
     </div>

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Quiz;
 use App\Models\QuizAttempt;
 use App\Models\QuizAttemptAnswer;
+use App\Models\Division;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -31,18 +32,11 @@ class QuizAttemptController extends Controller
                 ->whereNotNull('submitted_at')
                 ->count();
 
-        if (!empty($quiz->max_attempts)) {
-            $used = QuizAttempt::where('quiz_id', $quiz->id)
-                ->where('user_id', $user->id)
-                ->whereNotNull('submitted_at')
-                ->count();
-
             if ($used >= (int)$quiz->max_attempts) {
                 return redirect()
                     ->route('student.quizzes.show', [$quiz->course_id, $quiz->id])
                     ->with('error', 'You have reached the maximum attempts for this quiz.');
             }
-        }   
         }
 
         // ✅ resume existing in_progress
@@ -115,6 +109,9 @@ class QuizAttemptController extends Controller
 
         $remainingSeconds = $this->remainingSeconds($attempt);
 
+        $userDivision = Division::find($user->division_id);
+        $showClickDefine = $this->isMiddleSchoolDivision($userDivision);
+
         return view('student.quiz_attempt', [
             'attempt' => $attempt,
             'quiz' => $quiz,
@@ -124,6 +121,7 @@ class QuizAttemptController extends Controller
             'remainingSeconds' => $remainingSeconds,
             'timeLimitMinutes' => $timeLimitMinutes,
             'endsAt' => $endsAt?->toIso8601String(),
+            'showClickDefine' => $showClickDefine,
         ]);
     }
 
@@ -218,7 +216,7 @@ class QuizAttemptController extends Controller
                 // ✅ manual review later
                 if ($isManual) {
                     $isCorrect = null;
-                    $awarded = 0; 
+                    $awarded = 0;
                 }
 
                 QuizAttemptAnswer::updateOrCreate(
@@ -232,7 +230,6 @@ class QuizAttemptController extends Controller
                 );
             }
 
-            // ✅ IMPORTANT: your attempt table has score + total + status
             $attempt->update([
                 'submitted_at' => now(),
                 'status' => 'submitted',
@@ -250,7 +247,6 @@ class QuizAttemptController extends Controller
         $user = auth()->user();
         abort_if((int)$attempt->user_id !== (int)$user->id, 403);
 
-        // ✅ allow result for submitted + reviewed + graded
         abort_if(!in_array($attempt->status, ['submitted', 'reviewed', 'graded'], true), 403);
 
         $attempt->load([
@@ -266,22 +262,6 @@ class QuizAttemptController extends Controller
 
         $objectiveScore = 0;
         $objectiveTotal = 0;
-        $pendingReview = 0;
-
-        foreach ($quiz->questions as $q) {
-            $ans = $answers->get($q->id);
-
-            if (in_array($q->type, ['true_false', 'single_choice', 'multiple_choice'])) {
-                $objectiveTotal += (int)$q->marks;
-                $objectiveScore += (int)($ans?->awarded_marks ?? 0);
-            }
-
-            if (in_array($q->type, ['text', 'file'])) {
-                $hasAnswer = !empty($ans?->answer_json) || !empty($ans?->file_path);
-                if ($hasAnswer) $pendingReview++;
-            }
-        }
-        // manual answered count
         $manualAnswered = 0;
 
         foreach ($quiz->questions as $q) {
@@ -298,7 +278,6 @@ class QuizAttemptController extends Controller
             }
         }
 
-        // ✅ pending only if attempt not graded yet
         $pendingReview = ($manualAnswered > 0 && $attempt->status !== 'graded') ? $manualAnswered : 0;
 
         return view('student.quiz_result', [
@@ -322,8 +301,8 @@ class QuizAttemptController extends Controller
 
             $correctOption = $question->options->firstWhere('is_correct', 1);
             $correctVal = null;
+
             if ($correctOption) {
-                // if you store TF option as "true"/"false" in option_text
                 $v = strtolower((string)($correctOption->option_text ?? ''));
                 $correctVal = $v === 'true' ? true : ($v === 'false' ? false : null);
             }
@@ -343,7 +322,11 @@ class QuizAttemptController extends Controller
             $given = array_map('intval', (array)($payload['option_ids'] ?? []));
             sort($given);
 
-            $correctIds = $question->options->where('is_correct', 1)->pluck('id')->map(fn($v)=>(int)$v)->toArray();
+            $correctIds = $question->options->where('is_correct', 1)
+                ->pluck('id')
+                ->map(fn($v) => (int)$v)
+                ->toArray();
+
             sort($correctIds);
 
             $ok = ($given === $correctIds);
@@ -365,10 +348,33 @@ class QuizAttemptController extends Controller
     private function forceAutoSubmit(QuizAttempt $attempt)
     {
         $attempt->submitted_at = now();
-        $attempt->status = 'submitted' ;
+        $attempt->status = 'submitted';
         $attempt->save();
 
         return redirect()->route('student.quiz.attempt.result', $attempt->id)
             ->with('success', 'Time is over. Quiz auto-submitted.');
+    }
+
+    private function isMiddleSchoolDivision(?Division $division): bool
+    {
+        if (!$division) {
+            return false;
+        }
+
+        $name = strtolower((string) $division->name);
+
+        if (str_contains($name, 'middle')) {
+            return true;
+        }
+
+        $levels = Division::orderBy('level')->pluck('level')->values();
+
+        if ($levels->count() < 2) {
+            return false;
+        }
+
+        $middleLevel = (int) $levels[1];
+
+        return (int) $division->level === $middleLevel;
     }
 }

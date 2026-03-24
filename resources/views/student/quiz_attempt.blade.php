@@ -4,6 +4,8 @@
 @section('content')
 @php
     use Illuminate\Support\Str;
+
+    $clickDefineEnabled = !empty($showClickDefine ?? false);
 @endphp
 
 @once
@@ -67,6 +69,10 @@
       </div>
     </div>
 
+    @if($clickDefineEnabled)
+      <x-student.click-define-toolbar title="Click to Define" />
+    @endif
+
     {{-- Warning / Danger bars --}}
     @if(!empty($timeLimitMinutes) && $timeLimitMinutes > 0 && !empty($endsAt))
       <div id="timeWarning"
@@ -109,7 +115,6 @@
           $existing = $answers[$q->id] ?? null;
           $existingAnswer = $existing?->answer ?? [];
 
-          // ✅ Render Quill HTML if it looks like HTML
           $qText = $q->question ?? '';
           $looksHtml = Str::contains($qText, ['<p', '<h', '<div', '<span', '<img', '<br', '</']);
         @endphp
@@ -122,26 +127,33 @@
             <div class="text-sm font-semibold text-gray-900">{{ (int)$q->marks }} marks</div>
           </div>
 
-          {{-- ✅ Question text (FIXED) --}}
-          <div class="quizQuestionBody prose max-w-none text-gray-900">
-            @if($looksHtml)
-              {!! $qText !!}
-            @else
-              {!! nl2br(e($qText)) !!}
-            @endif
+          {{-- Question text only: safe for click-to-define --}}
+          <div class="rounded-2xl border border-gray-100 bg-gray-50/70 p-4">
+            <div
+              class="quizQuestionBody prose max-w-none text-gray-900"
+              @if($clickDefineEnabled) data-define-area @endif
+            >
+              @if($looksHtml)
+                {!! $qText !!}
+              @else
+                {!! nl2br(e($qText)) !!}
+              @endif
+            </div>
           </div>
 
           {{-- Optional separate image field --}}
           @if(!empty($q->question_image))
-            <img src="{{ asset('storage/'.$q->question_image) }}"
-                 class="max-h-72 rounded-2xl border border-gray-200 shadow-sm" />
+            <div data-define-skip>
+              <img src="{{ asset('storage/'.$q->question_image) }}"
+                   class="max-h-72 rounded-2xl border border-gray-200 shadow-sm" />
+            </div>
           @endif
 
           {{-- TRUE / FALSE --}}
           @if($q->type === 'true_false')
             @php $current = $existingAnswer['value'] ?? null; @endphp
 
-            <div class="grid sm:grid-cols-2 gap-3">
+            <div class="grid sm:grid-cols-2 gap-3" data-define-skip>
               <label class="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-4 hover:bg-gray-50 cursor-pointer transition">
                 <input type="radio" class="h-5 w-5 text-blue-600 border-gray-300 focus:ring-blue-500"
                        name="answers[{{ $q->id }}]" value="true"
@@ -160,7 +172,7 @@
 
           {{-- SINGLE CHOICE --}}
           @if($q->type === 'single_choice')
-            <div class="grid gap-3">
+            <div class="grid gap-3" data-define-skip>
               @foreach($q->options as $opt)
                 @php
                   $label = $opt->text ?? $opt->option_text ?? $opt->title ?? $opt->value ?? $opt->name ?? '';
@@ -176,7 +188,6 @@
                     {{ $checked ? 'checked' : '' }}
                   >
 
-                  {{-- option image (if you use it) --}}
                   @if(!empty($opt->option_image))
                     <img src="{{ asset('storage/'.$opt->option_image) }}"
                          class="w-12 h-12 rounded-xl border border-gray-200 object-cover">
@@ -197,7 +208,7 @@
               $selected = array_map('intval', $selected);
             @endphp
 
-            <div class="grid gap-3">
+            <div class="grid gap-3" data-define-skip>
               @foreach($q->options as $opt)
                 @php
                   $label = $opt->text ?? $opt->option_text ?? $opt->title ?? $opt->value ?? $opt->name ?? '';
@@ -229,18 +240,20 @@
           {{-- TEXT --}}
           @if($q->type === 'text')
             @php $val = $existingAnswer['text'] ?? ''; @endphp
-            <input
-              type="text"
-              name="answers[{{ $q->id }}]"
-              value="{{ $val }}"
-              placeholder="Type your answer..."
-              class="w-full rounded-2xl border border-gray-200 px-4 py-3 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            >
+            <div data-define-skip>
+              <input
+                type="text"
+                name="answers[{{ $q->id }}]"
+                value="{{ $val }}"
+                placeholder="Type your answer..."
+                class="w-full rounded-2xl border border-gray-200 px-4 py-3 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              >
+            </div>
           @endif
 
           {{-- FILE --}}
           @if($q->type === 'file')
-            <div class="rounded-2xl border border-gray-200 p-4 bg-gray-50">
+            <div class="rounded-2xl border border-gray-200 p-4 bg-gray-50" data-define-skip>
               <input type="file" name="answers[{{ $q->id }}]"
                      class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4
                             file:rounded-xl file:border-0 file:text-sm file:font-semibold
@@ -266,7 +279,7 @@
       @endforeach
 
       {{-- Submit --}}
-      <div class="flex justify-end">
+      <div class="flex justify-end" data-define-skip>
         <button id="submitBtn"
                 class="px-6 py-3 rounded-xl bg-purple-600 text-white hover:bg-purple-700 font-semibold transition">
           <i class="fa-solid fa-paper-plane mr-2"></i> Submit Quiz

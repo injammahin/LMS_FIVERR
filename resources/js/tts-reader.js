@@ -66,24 +66,25 @@ function pickPreferredVoice(lang = 'en-US') {
     const voices = window.speechSynthesis.getVoices() || [];
     if (!voices.length) return null;
 
-    const languageMatches = voices.filter(v => (v.lang || '').toLowerCase().startsWith(lang.toLowerCase().slice(0, 2)));
+    const desiredLangPrefix = lang.toLowerCase().slice(0, 2);
+    const languageMatches = voices.filter(v =>
+        (v.lang || '').toLowerCase().startsWith(desiredLangPrefix)
+    );
 
     const pool = languageMatches.length ? languageMatches : voices;
 
+    // Strong preference: US first, not UK first
     const preferredNames = [
-        'Google UK English Female',
+        'Google US English Female',
         'Google US English',
+        'Microsoft Aria Online (Natural) - English (United States)',
+        'Microsoft Jenny Online (Natural) - English (United States)',
         'Samantha',
         'Victoria',
         'Karen',
-        'Moira',
-        'Tessa',
-        'Veena',
         'Zira',
         'Jenny',
         'Aria',
-        'Sonia',
-        'Sara',
         'Emma',
         'Ava',
         'Olivia'
@@ -94,8 +95,20 @@ function pickPreferredVoice(lang = 'en-US') {
         if (match) return match;
     }
 
+    // Prefer US female-ish names before anything UK
+    const femaleUS = pool.find(v => {
+        const name = (v.name || '').toLowerCase();
+        const voiceLang = (v.lang || '').toLowerCase();
+        return voiceLang.includes('en-us') && /(female|zira|jenny|aria|samantha|victoria|karen|emma|ava|olivia)/i.test(name);
+    });
+
+    if (femaleUS) return femaleUS;
+
+    const anyUS = pool.find(v => (v.lang || '').toLowerCase().includes('en-us'));
+    if (anyUS) return anyUS;
+
     const femaleHint = pool.find(v =>
-        /(female|woman|girl|zira|jenny|aria|samantha|victoria|karen|moira|tessa|veena|sonia|sara|emma|ava|olivia)/i.test(v.name || '')
+        /(female|woman|girl|zira|jenny|aria|samantha|victoria|karen|emma|ava|olivia)/i.test(v.name || '')
     );
 
     if (femaleHint) return femaleHint;
@@ -130,6 +143,10 @@ class ReadAloudController {
         this.pendingTimeout = null;
         this.voice = null;
 
+        this.boundarySeen = false;
+        this.fallbackTimers = [];
+        this.baseWordsPerMinute = 150;
+
         if (!this.supported || !this.target) {
             this.disable('Read aloud is not available here.');
             return;
@@ -145,6 +162,7 @@ class ReadAloudController {
 
         window.addEventListener('beforeunload', () => {
             this.clearPendingTimeout();
+            this.clearFallbackTimers();
             window.speechSynthesis.cancel();
         });
     }
@@ -211,9 +229,18 @@ class ReadAloudController {
         this.wrapWords(this.target);
 
         this.wordSpans = Array.from(this.target.querySelectorAll('.tts-word'));
-        this.spokenText = normalizeSpeechText(this.target.innerText || this.target.textContent || '');
-        this.chunks = splitSpeechIntoChunks(this.spokenText, 170);
 
+        // Build spoken text directly from the wrapped words so highlight + speech stay aligned
+        this.spokenText = this.wordSpans
+            .map(span => (span.textContent || '').trim())
+            .filter(Boolean)
+            .join(' ');
+
+        // Keep natural chunking from original text as much as possible
+        const originalReadable = normalizeSpeechText(this.target.innerText || this.target.textContent || '');
+        this.chunks = splitSpeechIntoChunks(originalReadable || this.spokenText, 170);
+
+        // Build offsets against the actual spoken text used for highlight mapping
         const regex = getWordRegex();
         this.wordOffsets = [];
 
@@ -291,13 +318,15 @@ class ReadAloudController {
         }
 
         this.clearPendingTimeout();
+        this.clearFallbackTimers();
         window.speechSynthesis.cancel();
         this.clearHighlight();
 
         this.currentChunkIndex = 0;
+        this.boundarySeen = false;
         this.state = 'playing';
         this.target.classList.add('tts-reading-active');
-        this.setStatus(this.voice ? `Reading slowly with ${this.voice.name}...` : 'Reading slowly...');
+        this.setStatus(this.voice ? `Reading with ${this.voice.name}...` : 'Reading...');
         this.updateUi();
 
         this.speakChunk(this.currentChunkIndex);
@@ -326,16 +355,23 @@ class ReadAloudController {
             this.utterance = utterance;
             this.state = 'playing';
             this.updateUi();
+
+            // Start fallback highlighting in case boundary events do not fire
+            this.startFallbackHighlightForChunk(chunk);
         };
 
         utterance.onboundary = (event) => {
             if (typeof event.charIndex !== 'number') return;
 
-            const globalCharIndex = chunk.start + event.charIndex;
-            const wordIndex = this.findWordIndex(globalCharIndex);
+            this.boundarySeen = true;
+            this.clearFallbackTimers();
 
-            if (wordIndex >= 0) {
-                this.highlightWord(wordIndex);
+            const chunkWordsBefore = this.countWordsBeforeChunk(index);
+            const localWordIndex = this.findLocalWordIndex(chunk.text, event.charIndex);
+            const globalWordIndex = chunkWordsBefore + localWordIndex;
+
+            if (globalWordIndex >= 0) {
+                this.highlightWord(globalWordIndex);
             }
         };
 
@@ -347,11 +383,13 @@ class ReadAloudController {
 
         utterance.onresume = () => {
             this.state = 'playing';
-            this.setStatus(this.voice ? `Reading slowly with ${this.voice.name}...` : 'Reading slowly...');
+            this.setStatus(this.voice ? `Reading with ${this.voice.name}...` : 'Reading...');
             this.updateUi();
         };
 
         utterance.onend = () => {
+            this.clearFallbackTimers();
+
             if (this.state === 'idle') return;
 
             const nextIndex = index + 1;
@@ -365,11 +403,13 @@ class ReadAloudController {
 
             this.pendingTimeout = window.setTimeout(() => {
                 this.currentChunkIndex = nextIndex;
+                this.boundarySeen = false;
                 this.speakChunk(nextIndex);
             }, delay);
         };
 
         utterance.onerror = () => {
+            this.clearFallbackTimers();
             this.state = 'idle';
             this.target.classList.remove('tts-reading-active');
             this.setStatus('Unable to read aloud on this browser/device.');
@@ -378,6 +418,63 @@ class ReadAloudController {
         };
 
         window.speechSynthesis.speak(utterance);
+    }
+
+    startFallbackHighlightForChunk(chunk) {
+        this.clearFallbackTimers();
+
+        const words = (chunk.text.match(getWordRegex()) || []);
+        if (!words.length) return;
+
+        const wordsBefore = this.countWordsBeforeChunk(this.currentChunkIndex);
+        const rate = parseFloat(this.speedSelect?.value || '0.72');
+        const wordsPerMinute = this.baseWordsPerMinute * Math.max(rate, 0.45);
+        const msPerWord = Math.max(220, Math.round(60000 / wordsPerMinute));
+
+        words.forEach((_, localIndex) => {
+            const timer = window.setTimeout(() => {
+                if (this.boundarySeen || this.state !== 'playing') return;
+                this.highlightWord(wordsBefore + localIndex);
+            }, localIndex * msPerWord);
+
+            this.fallbackTimers.push(timer);
+        });
+    }
+
+    clearFallbackTimers() {
+        this.fallbackTimers.forEach(timer => clearTimeout(timer));
+        this.fallbackTimers = [];
+    }
+
+    countWordsBeforeChunk(chunkIndex) {
+        let count = 0;
+
+        for (let i = 0; i < chunkIndex; i++) {
+            count += (this.chunks[i].text.match(getWordRegex()) || []).length;
+        }
+
+        return count;
+    }
+
+    findLocalWordIndex(text, charIndex) {
+        const regex = getWordRegex();
+        let match;
+        let wordIndex = 0;
+        let lastWordIndex = 0;
+
+        while ((match = regex.exec(text)) !== null) {
+            const start = match.index;
+            const end = start + match[0].length;
+
+            if (charIndex <= end) {
+                return wordIndex;
+            }
+
+            lastWordIndex = wordIndex;
+            wordIndex++;
+        }
+
+        return lastWordIndex;
     }
 
     pause() {
@@ -399,6 +496,7 @@ class ReadAloudController {
 
     stop(updateStatus = true) {
         this.clearPendingTimeout();
+        this.clearFallbackTimers();
         window.speechSynthesis.cancel();
         this.state = 'idle';
         this.target.classList.remove('tts-reading-active');
@@ -413,6 +511,7 @@ class ReadAloudController {
 
     finish() {
         this.clearPendingTimeout();
+        this.clearFallbackTimers();
         this.state = 'ended';
         this.setStatus('Finished reading.');
         this.target.classList.remove('tts-reading-active');
@@ -425,27 +524,6 @@ class ReadAloudController {
             clearTimeout(this.pendingTimeout);
             this.pendingTimeout = null;
         }
-    }
-
-    findWordIndex(charIndex) {
-        if (!this.wordOffsets.length) return -1;
-
-        let low = 0;
-        let high = this.wordOffsets.length - 1;
-        let answer = 0;
-
-        while (low <= high) {
-            const mid = Math.floor((low + high) / 2);
-
-            if (this.wordOffsets[mid] <= charIndex) {
-                answer = mid;
-                low = mid + 1;
-            } else {
-                high = mid - 1;
-            }
-        }
-
-        return answer;
     }
 
     clearHighlight(resetIndex = true) {
