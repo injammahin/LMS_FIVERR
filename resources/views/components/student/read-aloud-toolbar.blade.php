@@ -48,8 +48,8 @@
             <label class="tts-speed-wrap">
                 <span class="text-xs font-semibold text-slate-600">Speed</span>
                 <select class="tts-speed-select" data-tts-speed>
-                    <option value="0.8">Slow</option>
-                    <option value="1" selected>Normal</option>
+                    <option value="0.8" selected>Slow</option>
+                    <option value="1" >Normal</option>
                     <option value="1.2">Fast</option>
                 </select>
             </label>
