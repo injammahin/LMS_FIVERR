@@ -20,11 +20,46 @@ const INTERACTIVE_SELECTOR = [
 
 const WORD_REGEX = /[\p{L}\p{N}]+(?:['’\-][\p{L}\p{N}]+)*/gu;
 
+const CUSTOM_DEFINITIONS = {
+    yahweh: {
+        word: 'Yahweh',
+        phonetic: 'YAH-way',
+        part_of_speech: 'proper noun',
+        definition: 'The Hebrew Name of God',
+        example: 'Yahweh is the Hebrew Name of God.',
+        audio: null
+    }
+};
+
 function cleanTerm(text = '') {
     return text
         .replace(/\s+/g, ' ')
         .replace(/[“”"()[\]{}]/g, '')
         .trim();
+}
+
+function normalizeLookupKey(term = '') {
+    let cleaned = cleanTerm(term)
+        .toLowerCase()
+        .replace(/[.,!?;:]+$/g, '')
+        .trim();
+
+    cleaned = cleaned
+        .replace(/['’]s$/i, '')   // Yahweh's -> yahweh
+        .replace(/s['’]$/i, 's')  // words ending weirdly with s'
+        .trim();
+
+    return cleaned;
+}
+
+function prettifyWord(term = '') {
+    const cleaned = cleanTerm(term);
+    if (!cleaned) return '';
+
+    const key = normalizeLookupKey(cleaned);
+    if (key === 'yahweh') return 'Yahweh';
+
+    return cleaned;
 }
 
 function isInsideArea(node, area) {
@@ -107,12 +142,15 @@ function getSelectedTextInArea(area) {
     const text = cleanTerm(selection.toString());
 
     if (!text) return null;
-    if (text.length > 40) return null;
+    if (text.length > 60) return null;
 
     const common = range.commonAncestorContainer;
     if (!isInsideArea(common, area)) return null;
 
-    const startEl = range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement;
+    const startEl = range.startContainer.nodeType === 1
+        ? range.startContainer
+        : range.startContainer.parentElement;
+
     if (startEl && startEl.closest(INTERACTIVE_SELECTOR)) return null;
 
     const rect = range.getBoundingClientRect();
@@ -134,6 +172,7 @@ function positionPopup(popup, rect) {
 
     popup.style.left = `${left}px`;
     popup.style.display = 'block';
+    popup.style.width = `${popupWidth}px`;
 
     const measuredHeight = popup.offsetHeight || 220;
 
@@ -218,20 +257,29 @@ class ClickDefineController {
         return popup;
     }
 
+    getCustomDefinition(term) {
+        const key = normalizeLookupKey(term);
+        return CUSTOM_DEFINITIONS[key] || null;
+    }
+
     async showDefinition(term, rect) {
+        const prettyTerm = prettifyWord(term);
+
         this.popup.innerHTML = `
-            <div class="define-loading">Looking up <strong>${this.escapeHtml(term)}</strong>...</div>
+            <div class="define-loading">
+                Looking up <strong>${this.escapeHtml(prettyTerm || term)}</strong>...
+            </div>
         `;
         positionPopup(this.popup, rect);
 
         try {
             const data = await this.fetchDefinition(term);
-            this.renderPopup(data);
+            this.renderPopup(data, term);
             positionPopup(this.popup, rect);
         } catch (error) {
             this.popup.innerHTML = `
                 <div class="define-error">
-                    <strong>${this.escapeHtml(term)}</strong><br>
+                    <strong>${this.escapeHtml(prettyTerm || term)}</strong><br>
                     Sorry, no definition was found.
                 </div>
             `;
@@ -240,13 +288,19 @@ class ClickDefineController {
     }
 
     async fetchDefinition(term) {
-        const key = term.toLowerCase();
+        const key = normalizeLookupKey(term);
 
         if (this.cache.has(key)) {
             return this.cache.get(key);
         }
 
-        const response = await fetch(`/student/dictionary/lookup?term=${encodeURIComponent(term)}`, {
+        const customDefinition = this.getCustomDefinition(term);
+        if (customDefinition) {
+            this.cache.set(key, customDefinition);
+            return customDefinition;
+        }
+
+        const response = await fetch(`/student/dictionary/lookup?term=${encodeURIComponent(key)}`, {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
                 'Accept': 'application/json'
@@ -254,16 +308,38 @@ class ClickDefineController {
         });
 
         if (!response.ok) {
+            const fallbackDefinition = this.getCustomDefinition(term);
+            if (fallbackDefinition) {
+                this.cache.set(key, fallbackDefinition);
+                return fallbackDefinition;
+            }
+
             throw new Error('Definition not found');
         }
 
         const data = await response.json();
-        this.cache.set(key, data);
 
+        if (!data || (!data.definition && !data.word)) {
+            const fallbackDefinition = this.getCustomDefinition(term);
+            if (fallbackDefinition) {
+                this.cache.set(key, fallbackDefinition);
+                return fallbackDefinition;
+            }
+
+            throw new Error('Definition not found');
+        }
+
+        if (!data.word) {
+            data.word = prettifyWord(term);
+        }
+
+        this.cache.set(key, data);
         return data;
     }
 
-    renderPopup(data) {
+    renderPopup(data, originalTerm = '') {
+        const displayWord = data.word || prettifyWord(originalTerm);
+
         const audioBtn = data.audio
             ? `
                 <button type="button" class="define-audio-btn" data-define-audio="${this.escapeHtml(data.audio)}" title="Play pronunciation">
@@ -287,7 +363,7 @@ class ClickDefineController {
         this.popup.innerHTML = `
             <div class="define-popup-header">
                 <div>
-                    <div class="define-popup-word">${this.escapeHtml(data.word || '')}</div>
+                    <div class="define-popup-word">${this.escapeHtml(displayWord)}</div>
                     <div class="define-popup-meta">
                         ${phonetic}
                         ${partOfSpeech}

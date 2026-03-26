@@ -1,65 +1,15 @@
-function getWordRegex() {
-    return /[\p{L}\p{N}]+(?:['’\-][\p{L}\p{N}]+)*/gu;
-}
+const WORD_REGEX = /[\p{L}\p{N}]+(?:['’\-][\p{L}\p{N}]+)*/gu;
+const MAX_UTTERANCE_LENGTH = 30000;
 
 function normalizeSpeechText(text = '') {
     return text
         .replace(/\r\n/g, '\n')
+        .replace(/\u00A0/g, ' ')
         .replace(/\n{2,}/g, '. ')
         .replace(/\n/g, ' ')
         .replace(/\s+/g, ' ')
         .replace(/\s+([,.;!?])/g, '$1')
         .trim();
-}
-
-function isVisible(el) {
-    const rect = el.getBoundingClientRect();
-    return rect.top >= 80 && rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) - 80;
-}
-
-function getPauseDuration(chunkText) {
-    const text = chunkText.trim();
-
-    if (/[.!?]["')\]]?$/.test(text)) return 700;
-    if (/[,;:]["')\]]?$/.test(text)) return 320;
-
-    return 120;
-}
-
-function splitSpeechIntoChunks(fullText, maxLen = 180) {
-    const chunks = [];
-    let cursor = 0;
-
-    const sentenceMatches = fullText.match(/[^.!?]+[.!?]?/g) || [fullText];
-
-    sentenceMatches.forEach((sentenceRaw) => {
-        const sentence = sentenceRaw.trim();
-        if (!sentence) return;
-
-        if (sentence.length <= maxLen) {
-            const start = fullText.indexOf(sentence, cursor);
-            if (start !== -1) {
-                chunks.push({ text: sentence, start });
-                cursor = start + sentence.length;
-            }
-            return;
-        }
-
-        const parts = sentence.match(/[^,;:]+[,;:]?|[^,;:]+$/g) || [sentence];
-
-        parts.forEach((partRaw) => {
-            const part = partRaw.trim();
-            if (!part) return;
-
-            const start = fullText.indexOf(part, cursor);
-            if (start !== -1) {
-                chunks.push({ text: part, start });
-                cursor = start + part.length;
-            }
-        });
-    });
-
-    return chunks.length ? chunks : [{ text: fullText, start: 0 }];
 }
 
 function pickPreferredVoice(lang = 'en-US') {
@@ -73,7 +23,6 @@ function pickPreferredVoice(lang = 'en-US') {
 
     const pool = languageMatches.length ? languageMatches : voices;
 
-    // Strong preference: US first, not UK first
     const preferredNames = [
         'Google US English Female',
         'Google US English',
@@ -95,25 +44,125 @@ function pickPreferredVoice(lang = 'en-US') {
         if (match) return match;
     }
 
-    // Prefer US female-ish names before anything UK
-    const femaleUS = pool.find(v => {
-        const name = (v.name || '').toLowerCase();
-        const voiceLang = (v.lang || '').toLowerCase();
-        return voiceLang.includes('en-us') && /(female|zira|jenny|aria|samantha|victoria|karen|emma|ava|olivia)/i.test(name);
-    });
-
-    if (femaleUS) return femaleUS;
-
     const anyUS = pool.find(v => (v.lang || '').toLowerCase().includes('en-us'));
     if (anyUS) return anyUS;
 
-    const femaleHint = pool.find(v =>
-        /(female|woman|girl|zira|jenny|aria|samantha|victoria|karen|emma|ava|olivia)/i.test(v.name || '')
-    );
-
-    if (femaleHint) return femaleHint;
-
     return pool[0] || null;
+}
+
+function isVisibleInViewport(el, padding = 80) {
+    const rect = el.getBoundingClientRect();
+    const vh = window.innerHeight || document.documentElement.clientHeight;
+    return rect.top >= padding && rect.bottom <= vh - padding;
+}
+
+function getWordOffsets(text) {
+    const offsets = [];
+    const regex = new RegExp(WORD_REGEX.source, WORD_REGEX.flags);
+    let match;
+
+    while ((match = regex.exec(text)) !== null) {
+        offsets.push(match.index);
+    }
+
+    return offsets;
+}
+
+function findWordIndexByCharIndex(offsets, charIndex) {
+    if (!offsets.length) return -1;
+    if (charIndex <= offsets[0]) return 0;
+
+    let low = 0;
+    let high = offsets.length - 1;
+    let answer = 0;
+
+    while (low <= high) {
+        const mid = Math.floor((low + high) / 2);
+
+        if (offsets[mid] <= charIndex) {
+            answer = mid;
+            low = mid + 1;
+        } else {
+            high = mid - 1;
+        }
+    }
+
+    return answer;
+}
+
+function splitLongUtterance(text, maxLen = MAX_UTTERANCE_LENGTH) {
+    if (text.length <= maxLen) {
+        return [{ text, globalStart: 0 }];
+    }
+
+    const parts = [];
+    let cursor = 0;
+
+    while (cursor < text.length) {
+        let end = Math.min(cursor + maxLen, text.length);
+
+        if (end < text.length) {
+            const windowText = text.slice(cursor, end);
+
+            let breakPos = Math.max(
+                windowText.lastIndexOf('. '),
+                windowText.lastIndexOf('! '),
+                windowText.lastIndexOf('? '),
+                windowText.lastIndexOf('; '),
+                windowText.lastIndexOf(': '),
+                windowText.lastIndexOf(', '),
+                windowText.lastIndexOf(' ')
+            );
+
+            if (breakPos > 0) {
+                end = cursor + breakPos + 1;
+            }
+        }
+
+        let piece = text.slice(cursor, end);
+        const leadingTrim = piece.match(/^\s*/)?.[0]?.length || 0;
+
+        piece = piece.trim();
+
+        if (piece) {
+            parts.push({
+                text: piece,
+                globalStart: cursor + leadingTrim
+            });
+        }
+
+        cursor = end;
+    }
+
+    return parts;
+}
+
+function isNodeActuallyReadable(textNode) {
+    if (!textNode || textNode.nodeType !== Node.TEXT_NODE) return false;
+    if (!textNode.nodeValue || !textNode.nodeValue.trim()) return false;
+
+    const skipTags = new Set([
+        'SCRIPT', 'STYLE', 'NOSCRIPT', 'IFRAME', 'AUDIO', 'VIDEO',
+        'SVG', 'CANVAS', 'INPUT', 'TEXTAREA', 'SELECT', 'OPTION', 'BUTTON'
+    ]);
+
+    let el = textNode.parentElement;
+
+    if (!el) return false;
+    if (el.closest('[data-tts-skip]')) return false;
+
+    while (el) {
+        if (skipTags.has(el.tagName)) return false;
+        if (el.classList?.contains('tts-word')) return false;
+        if (el.getAttribute?.('aria-hidden') === 'true') return false;
+
+        const style = window.getComputedStyle(el);
+        if (style.display === 'none' || style.visibility === 'hidden') return false;
+
+        el = el.parentElement;
+    }
+
+    return true;
 }
 
 class ReadAloudController {
@@ -134,18 +183,22 @@ class ReadAloudController {
         this.wordSpans = [];
         this.wordOffsets = [];
         this.spokenText = '';
-        this.chunks = [];
-        this.currentChunkIndex = 0;
+        this.segments = [];
         this.currentWordIndex = -1;
+        this.currentSegmentIndex = 0;
         this.prepared = false;
         this.state = 'idle';
         this.utterance = null;
-        this.pendingTimeout = null;
         this.voice = null;
+        this.runId = 0;
+        this.boundarySupportedForCurrentRun = false;
 
-        this.boundarySeen = false;
-        this.fallbackTimers = [];
-        this.baseWordsPerMinute = 150;
+        this.boundaryWatchdog = null;
+        this.fallbackTimer = null;
+        this.fallbackStartTime = 0;
+        this.fallbackWordStartIndex = 0;
+        this.fallbackWordEndIndex = 0;
+        this.fallbackWordsPerSecond = 2.8;
 
         if (!this.supported || !this.target) {
             this.disable('Read aloud is not available here.');
@@ -157,12 +210,12 @@ class ReadAloudController {
         this.updateUi();
 
         if (typeof speechSynthesis !== 'undefined' && 'onvoiceschanged' in speechSynthesis) {
-            speechSynthesis.onvoiceschanged = () => this.loadVoices();
+            speechSynthesis.addEventListener('voiceschanged', () => this.loadVoices());
         }
 
         window.addEventListener('beforeunload', () => {
-            this.clearPendingTimeout();
-            this.clearFallbackTimers();
+            this.runId++;
+            this.clearTimers();
             window.speechSynthesis.cancel();
         });
     }
@@ -173,19 +226,12 @@ class ReadAloudController {
                 this.resume();
                 return;
             }
-
             this.start();
         });
 
         this.pauseBtn?.addEventListener('click', () => this.pause());
         this.replayBtn?.addEventListener('click', () => this.replay());
         this.stopBtn?.addEventListener('click', () => this.stop());
-
-        this.speedSelect?.addEventListener('change', () => {
-            if (this.state === 'playing' || this.state === 'paused') {
-                this.replay();
-            }
-        });
     }
 
     loadVoices() {
@@ -208,7 +254,7 @@ class ReadAloudController {
     updateUi() {
         const playing = this.state === 'playing';
         const paused = this.state === 'paused';
-        const idle = this.state === 'idle' || this.state === 'ended';
+        const stopped = this.state === 'idle' || this.state === 'ended';
 
         if (this.playBtn) {
             this.playBtn.disabled = false;
@@ -220,57 +266,43 @@ class ReadAloudController {
 
         if (this.pauseBtn) this.pauseBtn.disabled = !playing;
         if (this.replayBtn) this.replayBtn.disabled = !this.prepared;
-        if (this.stopBtn) this.stopBtn.disabled = idle;
+        if (this.stopBtn) this.stopBtn.disabled = stopped;
     }
 
     prepare() {
         if (this.prepared) return;
 
-        this.wrapWords(this.target);
+        const originalVisibleText = normalizeSpeechText(
+            this.target.innerText || this.target.textContent || ''
+        );
 
+        this.wrapWords(this.target);
         this.wordSpans = Array.from(this.target.querySelectorAll('.tts-word'));
 
-        // Build spoken text directly from the wrapped words so highlight + speech stay aligned
-        this.spokenText = this.wordSpans
-            .map(span => (span.textContent || '').trim())
-            .filter(Boolean)
-            .join(' ');
+        this.spokenText = originalVisibleText;
+        this.wordOffsets = getWordOffsets(this.spokenText);
 
-        // Keep natural chunking from original text as much as possible
-        const originalReadable = normalizeSpeechText(this.target.innerText || this.target.textContent || '');
-        this.chunks = splitSpeechIntoChunks(originalReadable || this.spokenText, 170);
-
-        // Build offsets against the actual spoken text used for highlight mapping
-        const regex = getWordRegex();
-        this.wordOffsets = [];
-
-        let match;
-        while ((match = regex.exec(this.spokenText)) !== null) {
-            this.wordOffsets.push(match.index);
+        if (this.wordOffsets.length !== this.wordSpans.length) {
+            this.spokenText = this.wordSpans
+                .map(span => (span.textContent || '').trim())
+                .filter(Boolean)
+                .join(' ');
+            this.wordOffsets = getWordOffsets(this.spokenText);
         }
 
+        this.segments = splitLongUtterance(this.spokenText, MAX_UTTERANCE_LENGTH);
         this.prepared = true;
     }
 
     wrapWords(container) {
-        const skipTags = ['SCRIPT', 'STYLE', 'NOSCRIPT', 'IFRAME', 'AUDIO', 'VIDEO', 'SVG', 'CANVAS', 'INPUT', 'TEXTAREA', 'SELECT', 'OPTION', 'BUTTON'];
-
         const walker = document.createTreeWalker(
             container,
             NodeFilter.SHOW_TEXT,
             {
                 acceptNode: (node) => {
-                    if (!node.nodeValue || !node.nodeValue.trim()) {
-                        return NodeFilter.FILTER_REJECT;
-                    }
-
-                    const parent = node.parentElement;
-                    if (!parent) return NodeFilter.FILTER_REJECT;
-                    if (parent.closest('[data-tts-skip]')) return NodeFilter.FILTER_REJECT;
-                    if (skipTags.includes(parent.tagName)) return NodeFilter.FILTER_REJECT;
-                    if (parent.classList.contains('tts-word')) return NodeFilter.FILTER_REJECT;
-
-                    return NodeFilter.FILTER_ACCEPT;
+                    return isNodeActuallyReadable(node)
+                        ? NodeFilter.FILTER_ACCEPT
+                        : NodeFilter.FILTER_REJECT;
                 }
             }
         );
@@ -283,14 +315,16 @@ class ReadAloudController {
         textNodes.forEach((textNode) => {
             const text = textNode.nodeValue;
             const fragment = document.createDocumentFragment();
-            const regex = getWordRegex();
+            const regex = new RegExp(WORD_REGEX.source, WORD_REGEX.flags);
 
             let lastIndex = 0;
             let match;
 
             while ((match = regex.exec(text)) !== null) {
                 if (match.index > lastIndex) {
-                    fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+                    fragment.appendChild(
+                        document.createTextNode(text.slice(lastIndex, match.index))
+                    );
                 }
 
                 const span = document.createElement('span');
@@ -305,46 +339,55 @@ class ReadAloudController {
                 fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
             }
 
-            textNode.parentNode.replaceChild(fragment, textNode);
+            if (textNode.parentNode) {
+                textNode.parentNode.replaceChild(fragment, textNode);
+            }
         });
     }
 
     start() {
         this.prepare();
 
-        if (!this.spokenText) {
-            this.setStatus('No readable description found.');
+        if (!this.spokenText || !this.wordSpans.length) {
+            this.setStatus('No readable content found.');
             return;
         }
 
-        this.clearPendingTimeout();
-        this.clearFallbackTimers();
-        window.speechSynthesis.cancel();
-        this.clearHighlight();
+        this.runId++;
+        const currentRunId = this.runId;
 
-        this.currentChunkIndex = 0;
-        this.boundarySeen = false;
+        this.currentSegmentIndex = 0;
+        this.currentWordIndex = -1;
+        this.boundarySupportedForCurrentRun = false;
         this.state = 'playing';
         this.target.classList.add('tts-reading-active');
-        this.setStatus(this.voice ? `Reading with ${this.voice.name}...` : 'Reading...');
+        this.clearHighlight();
+        this.clearTimers();
         this.updateUi();
 
-        this.speakChunk(this.currentChunkIndex);
+        window.speechSynthesis.cancel();
+
+        window.setTimeout(() => {
+            if (this.runId !== currentRunId) return;
+            this.speakSegment(0, currentRunId);
+        }, 30);
     }
 
-    speakChunk(index) {
-        if (this.state === 'idle') return;
-        if (index >= this.chunks.length) {
-            this.finish();
+    speakSegment(segmentIndex, runId) {
+        if (this.runId !== runId) return;
+        if (segmentIndex >= this.segments.length) {
+            this.finish(runId);
             return;
         }
 
-        const chunk = this.chunks[index];
-        const utterance = new SpeechSynthesisUtterance(chunk.text);
+        this.currentSegmentIndex = segmentIndex;
+
+        const segment = this.segments[segmentIndex];
+        const utterance = new SpeechSynthesisUtterance(segment.text);
 
         utterance.lang = this.voice?.lang || document.documentElement.lang || 'en-US';
-        utterance.rate = parseFloat(this.speedSelect?.value || '0.72');
-        utterance.pitch = 1.03;
+        utterance.rate = parseFloat(this.speedSelect?.value || '1');
+        utterance.pitch = 1;
         utterance.volume = 1;
 
         if (this.voice) {
@@ -352,129 +395,145 @@ class ReadAloudController {
         }
 
         utterance.onstart = () => {
+            if (this.runId !== runId) return;
+
             this.utterance = utterance;
             this.state = 'playing';
+            this.target.classList.add('tts-reading-active');
+            this.setStatus(this.voice ? `Reading with ${this.voice.name}...` : 'Reading...');
             this.updateUi();
 
-            // Start fallback highlighting in case boundary events do not fire
-            this.startFallbackHighlightForChunk(chunk);
+            this.startBoundaryWatchdog(segment, utterance.rate);
         };
 
         utterance.onboundary = (event) => {
+            if (this.runId !== runId) return;
             if (typeof event.charIndex !== 'number') return;
 
-            this.boundarySeen = true;
-            this.clearFallbackTimers();
+            if (event.name && event.name !== 'word') return;
 
-            const chunkWordsBefore = this.countWordsBeforeChunk(index);
-            const localWordIndex = this.findLocalWordIndex(chunk.text, event.charIndex);
-            const globalWordIndex = chunkWordsBefore + localWordIndex;
+            this.boundarySupportedForCurrentRun = true;
+            this.stopFallbackHighlighter();
 
-            if (globalWordIndex >= 0) {
-                this.highlightWord(globalWordIndex);
+            const globalCharIndex = segment.globalStart + event.charIndex;
+            const wordIndex = findWordIndexByCharIndex(this.wordOffsets, globalCharIndex);
+
+            if (wordIndex >= 0) {
+                this.highlightWord(wordIndex);
             }
         };
 
         utterance.onpause = () => {
+            if (this.runId !== runId) return;
             this.state = 'paused';
             this.setStatus('Paused.');
             this.updateUi();
+
+            if (this.fallbackTimer) {
+                clearInterval(this.fallbackTimer);
+                this.fallbackTimer = null;
+            }
         };
 
         utterance.onresume = () => {
+            if (this.runId !== runId) return;
             this.state = 'playing';
             this.setStatus(this.voice ? `Reading with ${this.voice.name}...` : 'Reading...');
             this.updateUi();
+
+            if (!this.boundarySupportedForCurrentRun) {
+                this.startFallbackHighlighter(segment, utterance.rate);
+            }
         };
 
         utterance.onend = () => {
-            this.clearFallbackTimers();
-
+            if (this.runId !== runId) return;
             if (this.state === 'idle') return;
 
-            const nextIndex = index + 1;
+            this.clearTimers();
 
-            if (nextIndex >= this.chunks.length) {
-                this.finish();
+            const nextSegmentIndex = segmentIndex + 1;
+
+            if (nextSegmentIndex >= this.segments.length) {
+                this.finish(runId);
                 return;
             }
 
-            const delay = getPauseDuration(chunk.text);
-
-            this.pendingTimeout = window.setTimeout(() => {
-                this.currentChunkIndex = nextIndex;
-                this.boundarySeen = false;
-                this.speakChunk(nextIndex);
-            }, delay);
+            this.speakSegment(nextSegmentIndex, runId);
         };
 
         utterance.onerror = () => {
-            this.clearFallbackTimers();
+            if (this.runId !== runId) return;
+
+            this.clearTimers();
             this.state = 'idle';
             this.target.classList.remove('tts-reading-active');
-            this.setStatus('Unable to read aloud on this browser/device.');
             this.clearHighlight(false);
+
+            this.setStatus('Unable to continue read aloud.');
             this.updateUi();
         };
 
         window.speechSynthesis.speak(utterance);
     }
 
-    startFallbackHighlightForChunk(chunk) {
-        this.clearFallbackTimers();
+    startBoundaryWatchdog(segment, rate) {
+        clearTimeout(this.boundaryWatchdog);
 
-        const words = (chunk.text.match(getWordRegex()) || []);
-        if (!words.length) return;
+        this.boundaryWatchdog = setTimeout(() => {
+            if (this.state !== 'playing') return;
+            if (this.boundarySupportedForCurrentRun) return;
 
-        const wordsBefore = this.countWordsBeforeChunk(this.currentChunkIndex);
-        const rate = parseFloat(this.speedSelect?.value || '0.72');
-        const wordsPerMinute = this.baseWordsPerMinute * Math.max(rate, 0.45);
-        const msPerWord = Math.max(220, Math.round(60000 / wordsPerMinute));
-
-        words.forEach((_, localIndex) => {
-            const timer = window.setTimeout(() => {
-                if (this.boundarySeen || this.state !== 'playing') return;
-                this.highlightWord(wordsBefore + localIndex);
-            }, localIndex * msPerWord);
-
-            this.fallbackTimers.push(timer);
-        });
+            this.startFallbackHighlighter(segment, rate);
+            this.setStatus('Reading... highlight fallback active');
+        }, 700);
     }
 
-    clearFallbackTimers() {
-        this.fallbackTimers.forEach(timer => clearTimeout(timer));
-        this.fallbackTimers = [];
+    startFallbackHighlighter(segment, rate) {
+        this.stopFallbackHighlighter();
+
+        const segmentText = segment.text || '';
+        const segmentOffsets = getWordOffsets(segmentText);
+
+        if (!segmentOffsets.length) return;
+
+        const globalStartWordIndex = findWordIndexByCharIndex(this.wordOffsets, segment.globalStart);
+        if (globalStartWordIndex < 0) return;
+
+        this.fallbackWordStartIndex = globalStartWordIndex;
+        this.fallbackWordEndIndex = globalStartWordIndex + segmentOffsets.length - 1;
+        this.fallbackStartTime = performance.now();
+
+        const adjustedWordsPerSecond = Math.max(1.5, this.fallbackWordsPerSecond * (rate || 1));
+
+        this.fallbackTimer = setInterval(() => {
+            if (this.state !== 'playing') return;
+
+            const elapsedSeconds = (performance.now() - this.fallbackStartTime) / 1000;
+            const progressedWords = Math.floor(elapsedSeconds * adjustedWordsPerSecond);
+            const nextWordIndex = Math.min(
+                this.fallbackWordStartIndex + progressedWords,
+                this.fallbackWordEndIndex
+            );
+
+            this.highlightWord(nextWordIndex);
+        }, 40);
     }
 
-    countWordsBeforeChunk(chunkIndex) {
-        let count = 0;
+    stopFallbackHighlighter() {
+        if (this.fallbackTimer) {
+            clearInterval(this.fallbackTimer);
+            this.fallbackTimer = null;
+        }
+    }
 
-        for (let i = 0; i < chunkIndex; i++) {
-            count += (this.chunks[i].text.match(getWordRegex()) || []).length;
+    clearTimers() {
+        if (this.boundaryWatchdog) {
+            clearTimeout(this.boundaryWatchdog);
+            this.boundaryWatchdog = null;
         }
 
-        return count;
-    }
-
-    findLocalWordIndex(text, charIndex) {
-        const regex = getWordRegex();
-        let match;
-        let wordIndex = 0;
-        let lastWordIndex = 0;
-
-        while ((match = regex.exec(text)) !== null) {
-            const start = match.index;
-            const end = start + match[0].length;
-
-            if (charIndex <= end) {
-                return wordIndex;
-            }
-
-            lastWordIndex = wordIndex;
-            wordIndex++;
-        }
-
-        return lastWordIndex;
+        this.stopFallbackHighlighter();
     }
 
     pause() {
@@ -495,8 +554,8 @@ class ReadAloudController {
     }
 
     stop(updateStatus = true) {
-        this.clearPendingTimeout();
-        this.clearFallbackTimers();
+        this.runId++;
+        this.clearTimers();
         window.speechSynthesis.cancel();
         this.state = 'idle';
         this.target.classList.remove('tts-reading-active');
@@ -509,21 +568,15 @@ class ReadAloudController {
         this.updateUi();
     }
 
-    finish() {
-        this.clearPendingTimeout();
-        this.clearFallbackTimers();
+    finish(runId) {
+        if (this.runId !== runId) return;
+
+        this.clearTimers();
         this.state = 'ended';
-        this.setStatus('Finished reading.');
         this.target.classList.remove('tts-reading-active');
         this.clearHighlight(false);
+        this.setStatus('Finished reading.');
         this.updateUi();
-    }
-
-    clearPendingTimeout() {
-        if (this.pendingTimeout) {
-            clearTimeout(this.pendingTimeout);
-            this.pendingTimeout = null;
-        }
     }
 
     clearHighlight(resetIndex = true) {
@@ -546,12 +599,14 @@ class ReadAloudController {
         this.currentWordIndex = index;
 
         const current = this.wordSpans[index];
+        if (!current) return;
+
         current.classList.add('tts-word-current');
         this.target.classList.add('tts-block-current');
 
-        if (index % 3 === 0 && current && !isVisible(current)) {
+        if (!isVisibleInViewport(current, 80)) {
             current.scrollIntoView({
-                behavior: 'smooth',
+                behavior: 'auto',
                 block: 'center',
                 inline: 'nearest'
             });
@@ -561,6 +616,7 @@ class ReadAloudController {
 
 function initReadAloud() {
     const roots = document.querySelectorAll('[data-tts-root]');
+
     roots.forEach((root) => {
         if (root.dataset.ttsInitialized === 'true') return;
         root.dataset.ttsInitialized = 'true';
