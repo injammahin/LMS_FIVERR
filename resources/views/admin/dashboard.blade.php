@@ -20,12 +20,12 @@
             };
         };
 
-        // Small helper KPI donut values
         $activePct = $totalStudents > 0 ? (int) round(($activeStudents / $totalStudents) * 100) : 0;
         $riskPct = $totalStudents > 0 ? (int) round(($atRiskCount / $totalStudents) * 100) : 0;
-
-        // Division completion average (if you want a KPI)
         $divAvg = (int) round(collect($divisionRows)->avg('overall_percent') ?? 0);
+
+        $courseInsightsTotal = collect($courseInsights)->count();
+        $atRiskTotal = collect($atRiskRows)->count();
     @endphp
 
     <div class="space-y-6">
@@ -65,7 +65,7 @@
             </div>
         </div>
 
-        {{-- KPI grid (decorated cards, small text, no big fonts) --}}
+        {{-- KPI grid --}}
         <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-4">
 
             {{-- Students --}}
@@ -134,7 +134,7 @@
 
                 <div class="kpiFoot">
                     <div class="kpiMiniLabel">Monitor</div>
-                    <div class="kpiMiniValue">Top {{ min(12, (int) $atRiskCount) }}</div>
+                    <div class="kpiMiniValue">{{ $atRiskCount }}</div>
                 </div>
             </div>
 
@@ -184,12 +184,13 @@
                 </div>
             </div>
 
-            {{-- Spotlight: best division --}}
+            {{-- Spotlight --}}
             @php
                 $topDivision = collect($divisionRows)->sortByDesc('overall_percent')->first();
                 $topDivName = $topDivision['division']?->name ?? '—';
                 $topDivPct = (int) ($topDivision['overall_percent'] ?? 0);
             @endphp
+
             <div class="kpiCard">
                 <div class="kpiTop">
                     <div class="kpiIcon {{ $chip('amber') }}">
@@ -206,7 +207,6 @@
                     <div class="kpiMiniValue">{{ $topDivPct }}%</div>
                 </div>
             </div>
-
         </div>
 
         {{-- Charts row --}}
@@ -243,7 +243,6 @@
                     <canvas id="divisionProgressChart"></canvas>
                 </div>
             </div>
-
         </div>
 
         {{-- Course grades --}}
@@ -298,7 +297,7 @@
                                     $gradeTone = $g >= 70 ? 'emerald' : ($g >= 40 ? 'amber' : 'red');
                                 @endphp
 
-                                <tr class="hover:bg-gray-50/60 dark:hover:bg-white/5">
+                                <tr class="course-insight-row {{ $loop->iteration > 5 ? 'hidden' : '' }} hover:bg-gray-50/60 dark:hover:bg-white/5">
                                     <td class="px-5 py-4">
                                         <div class="flex items-start gap-3">
                                             <div
@@ -307,7 +306,8 @@
                                             </div>
                                             <div class="min-w-0">
                                                 <div class="font-semibold text-gray-900 dark:text-white truncate">
-                                                    {{ $c->title }}</div>
+                                                    {{ $c->title }}
+                                                </div>
                                                 <div class="text-xs text-gray-500 dark:text-white/60 truncate">
                                                     {{ optional($c->subject)->name ?? '—' }} •
                                                     {{ optional(optional($c->subject)->division)->name ?? '—' }}
@@ -324,15 +324,18 @@
                                         <div class="flex items-center gap-3">
                                             <div
                                                 class="h-2 w-full max-w-[140px] rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden border border-gray-200 dark:border-white/10">
-                                                <div class="h-2 rounded-full" style="width: {{ $p }}%; background:#10b981;">
+                                                <div class="h-2 rounded-full"
+                                                    style="width: {{ $p }}%; background:#10b981;">
                                                 </div>
                                             </div>
                                             <div class="text-xs font-semibold text-gray-700 dark:text-white/80 w-[42px]">
-                                                {{ $p }}%</div>
+                                                {{ $p }}%
+                                            </div>
                                         </div>
                                         <div class="mt-2 text-[11px] text-gray-500 dark:text-white/60">
-                                            L: {{ (int) $row['lessons_total'] }} • Q: {{ (int) $row['quizzes_total'] }} • A:
-                                            {{ (int) $row['assignments_total'] }}
+                                            L: {{ (int) $row['lessons_total'] }} •
+                                            Q: {{ (int) $row['quizzes_total'] }} •
+                                            A: {{ (int) $row['assignments_total'] }}
                                         </div>
                                     </td>
 
@@ -353,6 +356,27 @@
                         </tbody>
                     </table>
                 </div>
+
+                {{-- Course Analytics Pagination --}}
+                @if($courseInsightsTotal > 5)
+                    <div class="tablePager">
+                        <div id="courseInsightsInfo" class="tablePagerInfo"></div>
+
+                        <div class="tablePagerActions">
+                            <button type="button" id="courseInsightsPrev" class="tablePagerBtn">
+                                <i class="fa-solid fa-chevron-left text-[11px]"></i>
+                                Prev
+                            </button>
+
+                            <div id="courseInsightsPages" class="tablePagerPages"></div>
+
+                            <button type="button" id="courseInsightsNext" class="tablePagerBtn">
+                                Next
+                                <i class="fa-solid fa-chevron-right text-[11px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                @endif
             </div>
 
             {{-- At risk --}}
@@ -360,7 +384,7 @@
                 <div class="panelHead">
                     <div>
                         <div class="panelTitle">Students at Risk</div>
-                        <div class="panelSub">Low progress, low grades, or inactive (top 12)</div>
+                        <div class="panelSub">Low progress, low grades, or inactive</div>
                     </div>
                     <span class="panelPill {{ $chip('red') }}">
                         <i class="fa-solid fa-shield-heart text-[12px]"></i> Attention
@@ -389,7 +413,7 @@
                                     $avgTone = $g >= 70 ? 'emerald' : ($g >= 40 ? 'amber' : 'red');
                                 @endphp
 
-                                <tr class="hover:bg-gray-50/60 dark:hover:bg-white/5">
+                                <tr class="at-risk-row {{ $loop->iteration > 5 ? 'hidden' : '' }} hover:bg-gray-50/60 dark:hover:bg-white/5">
                                     <td class="px-5 py-4">
                                         <div class="flex items-start gap-3">
                                             <div
@@ -399,7 +423,8 @@
                                             </div>
                                             <div class="min-w-0">
                                                 <div class="font-semibold text-gray-900 dark:text-white truncate">
-                                                    {{ $st->name }}</div>
+                                                    {{ $st->name }}
+                                                </div>
                                                 <div class="text-xs text-gray-500 dark:text-white/60 truncate">
                                                     {{ $st->username ?? $st->email ?? '—' }}
                                                     @if($inactive)
@@ -418,11 +443,13 @@
                                         <div class="flex items-center gap-3">
                                             <div
                                                 class="h-2 w-full max-w-[130px] rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden border border-gray-200 dark:border-white/10">
-                                                <div class="h-2 rounded-full" style="width: {{ $p }}%; background:#ef4444;">
+                                                <div class="h-2 rounded-full"
+                                                    style="width: {{ $p }}%; background:#ef4444;">
                                                 </div>
                                             </div>
                                             <div class="text-xs font-semibold text-gray-700 dark:text-white/80 w-[42px]">
-                                                {{ $p }}%</div>
+                                                {{ $p }}%
+                                            </div>
                                         </div>
                                     </td>
 
@@ -443,15 +470,33 @@
                         </tbody>
                     </table>
                 </div>
+
+                {{-- At Risk Pagination --}}
+                @if($atRiskTotal > 5)
+                    <div class="tablePager">
+                        <div id="atRiskInfo" class="tablePagerInfo"></div>
+
+                        <div class="tablePagerActions">
+                            <button type="button" id="atRiskPrev" class="tablePagerBtn">
+                                <i class="fa-solid fa-chevron-left text-[11px]"></i>
+                                Prev
+                            </button>
+
+                            <div id="atRiskPages" class="tablePagerPages"></div>
+
+                            <button type="button" id="atRiskNext" class="tablePagerBtn">
+                                Next
+                                <i class="fa-solid fa-chevron-right text-[11px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                @endif
             </div>
-
         </div>
-
     </div>
 
     @once
         <style>
-            /* Premium small components (no big fonts) */
             .kpiCard {
                 border-radius: 16px;
                 border: 1px solid rgba(229, 231, 235, 1);
@@ -657,10 +702,104 @@
                 position: relative;
             }
 
-            /* Table: softer + premium feel */
             table th,
             table td {
                 white-space: nowrap;
+            }
+
+            .tablePager {
+                border-top: 1px solid rgba(229, 231, 235, 1);
+                padding: 12px 16px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                flex-wrap: wrap;
+                background: rgba(249, 250, 251, .75);
+            }
+
+            .dark .tablePager {
+                border-top-color: rgba(255, 255, 255, .10);
+                background: rgba(255, 255, 255, .03);
+            }
+
+            .tablePagerInfo {
+                font-size: 12px;
+                color: rgba(107, 114, 128, 1);
+            }
+
+            .dark .tablePagerInfo {
+                color: rgba(255, 255, 255, .55);
+            }
+
+            .tablePagerActions {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                flex-wrap: wrap;
+            }
+
+            .tablePagerPages {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                flex-wrap: wrap;
+            }
+
+            .tablePagerBtn,
+            .tablePagerPageBtn {
+                min-height: 32px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                border-radius: 10px;
+                border: 1px solid rgba(229, 231, 235, 1);
+                background: rgba(255, 255, 255, 1);
+                color: rgba(55, 65, 81, 1);
+                font-size: 12px;
+                font-weight: 700;
+                padding: 7px 10px;
+                transition: .2s ease;
+            }
+
+            .tablePagerPageBtn {
+                width: 32px;
+                padding: 0;
+            }
+
+            .dark .tablePagerBtn,
+            .dark .tablePagerPageBtn {
+                border-color: rgba(255, 255, 255, .10);
+                background: rgba(15, 23, 42, 1);
+                color: rgba(255, 255, 255, .75);
+            }
+
+            .tablePagerBtn:hover,
+            .tablePagerPageBtn:hover {
+                background: rgba(243, 244, 246, 1);
+            }
+
+            .dark .tablePagerBtn:hover,
+            .dark .tablePagerPageBtn:hover {
+                background: rgba(255, 255, 255, .06);
+            }
+
+            .tablePagerBtn:disabled {
+                opacity: .45;
+                cursor: not-allowed;
+            }
+
+            .tablePagerPageBtn.is-active {
+                border-color: rgba(37, 99, 235, .35);
+                background: rgba(37, 99, 235, .10);
+                color: rgba(29, 78, 216, 1);
+            }
+
+            .dark .tablePagerPageBtn.is-active {
+                border-color: rgba(96, 165, 250, .35);
+                background: rgba(59, 130, 246, .16);
+                color: rgba(191, 219, 254, 1);
             }
         </style>
     @endonce
@@ -681,12 +820,6 @@
         const courseLabels = @json($chartCourseLabels);
         const courseGrades = @json($chartCourseGrades);
 
-        // Helpers: detect dark
-        function isDark() {
-            return document.documentElement.classList.contains('dark');
-        }
-
-        // Active trend
         new Chart(document.getElementById('activeTrendChart'), {
             type: 'line',
             data: {
@@ -710,7 +843,6 @@
             }
         });
 
-        // Division progress
         new Chart(document.getElementById('divisionProgressChart'), {
             type: 'bar',
             data: {
@@ -730,7 +862,6 @@
             }
         });
 
-        // Course grades
         new Chart(document.getElementById('courseGradesChart'), {
             type: 'bar',
             data: {
@@ -750,5 +881,102 @@
                 }
             }
         });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            setupTablePagination({
+                rowSelector: '.course-insight-row',
+                perPage: 5,
+                infoId: 'courseInsightsInfo',
+                prevId: 'courseInsightsPrev',
+                nextId: 'courseInsightsNext',
+                pagesId: 'courseInsightsPages',
+                itemLabel: 'courses'
+            });
+
+            setupTablePagination({
+                rowSelector: '.at-risk-row',
+                perPage: 5,
+                infoId: 'atRiskInfo',
+                prevId: 'atRiskPrev',
+                nextId: 'atRiskNext',
+                pagesId: 'atRiskPages',
+                itemLabel: 'students'
+            });
+        });
+
+        function setupTablePagination(config) {
+            const rows = Array.from(document.querySelectorAll(config.rowSelector));
+            const info = document.getElementById(config.infoId);
+            const prev = document.getElementById(config.prevId);
+            const next = document.getElementById(config.nextId);
+            const pages = document.getElementById(config.pagesId);
+
+            if (!rows.length || !info || !prev || !next || !pages) {
+                return;
+            }
+
+            const perPage = config.perPage || 5;
+            const totalRows = rows.length;
+            const totalPages = Math.ceil(totalRows / perPage);
+            let currentPage = 1;
+
+            function renderPageButtons() {
+                pages.innerHTML = '';
+
+                for (let i = 1; i <= totalPages; i++) {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.textContent = i;
+                    btn.className = 'tablePagerPageBtn';
+
+                    if (i === currentPage) {
+                        btn.classList.add('is-active');
+                    }
+
+                    btn.addEventListener('click', function () {
+                        currentPage = i;
+                        render();
+                    });
+
+                    pages.appendChild(btn);
+                }
+            }
+
+            function render() {
+                const start = (currentPage - 1) * perPage;
+                const end = start + perPage;
+
+                rows.forEach((row, index) => {
+                    const shouldShow = index >= start && index < end;
+                    row.classList.toggle('hidden', !shouldShow);
+                });
+
+                const showingFrom = totalRows === 0 ? 0 : start + 1;
+                const showingTo = Math.min(end, totalRows);
+
+                info.textContent = `Showing ${showingFrom}-${showingTo} of ${totalRows} ${config.itemLabel}`;
+
+                prev.disabled = currentPage === 1;
+                next.disabled = currentPage === totalPages;
+
+                renderPageButtons();
+            }
+
+            prev.addEventListener('click', function () {
+                if (currentPage > 1) {
+                    currentPage--;
+                    render();
+                }
+            });
+
+            next.addEventListener('click', function () {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    render();
+                }
+            });
+
+            render();
+        }
     </script>
 @endsection

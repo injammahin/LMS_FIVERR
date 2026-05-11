@@ -189,8 +189,10 @@
 
         <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <div>
-                <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Choose Your Division</h2>
-                <p class="text-sm text-gray-500 dark:text-white/60">
+            <h2 class="text-xl font-semibold text-[#D4AF37] dark:text-[#D4AF37]">
+                University of Yahweh
+            </h2>     
+           <p class="text-sm text-gray-500 dark:text-white/60">
                     Available divisions are unlocked based on your progress.
                 </p>
             </div>

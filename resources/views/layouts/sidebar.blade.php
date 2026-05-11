@@ -6,13 +6,14 @@
     $currentPath = request()->path();
 @endphp
 
-<aside id="sidebar" class="fixed flex flex-col mt-0 top-0 px-5 left-0
-bg-white dark:bg-gray-900 dark:border-gray-800
-text-gray-900 h-screen transition-all duration-300 ease-in-out
-z-[60] border-r border-gray-200 shadow-md" x-data="{
+<aside id="sidebar"
+    class="fixed flex flex-col mt-0 top-0 px-5 left-0
+    bg-white dark:bg-gray-900 dark:border-gray-800
+    text-gray-900 h-screen transition-all duration-300 ease-in-out
+    z-[60] border-r border-gray-200 shadow-md"
+    x-data="{
         openSubmenus: {},
         init() {
-            // Auto-open Dashboard menu on page load
             this.initializeActiveMenus();
         },
         initializeActiveMenus() {
@@ -21,7 +22,6 @@ z-[60] border-r border-gray-200 shadow-md" x-data="{
             @foreach ($menuGroups as $groupIndex => $menuGroup)
                 @foreach ($menuGroup['items'] as $itemIndex => $item)
                     @if (isset($item['subItems']))
-                        // Check if any submenu item matches current path
                         @foreach ($item['subItems'] as $subItem)
                             if (currentPath === '{{ ltrim($subItem['path'], '/') }}' ||
                                 window.location.pathname === '{{ $subItem['path'] }}') {
@@ -36,7 +36,6 @@ z-[60] border-r border-gray-200 shadow-md" x-data="{
             const key = groupIndex + '-' + itemIndex;
             const newState = !this.openSubmenus[key];
 
-            // Close all other submenus when opening a new one
             if (newState) {
                 this.openSubmenus = {};
             }
@@ -50,33 +49,61 @@ z-[60] border-r border-gray-200 shadow-md" x-data="{
         isActive(path) {
             return window.location.pathname === path || '{{ $currentPath }}' === path.replace(/^\//, '');
         }
-    }" :class="{
+    }"
+    :class="{
         'w-[290px]': $store.sidebar.isExpanded || $store.sidebar.isMobileOpen || $store.sidebar.isHovered,
         'w-[90px]': !$store.sidebar.isExpanded && !$store.sidebar.isHovered,
         'translate-x-0': $store.sidebar.isMobileOpen,
         '-translate-x-full xl:translate-x-0': !$store.sidebar.isMobileOpen
-    }" @mouseenter="if (!$store.sidebar.isExpanded) $store.sidebar.setHovered(true)"
+    }"
+    @mouseenter="if (!$store.sidebar.isExpanded) $store.sidebar.setHovered(true)"
     @mouseleave="$store.sidebar.setHovered(false)">
 
     <!-- Logo Section -->
-    <div class="pt-6 pb-6 flex justify-between items-center transition-all duration-200"
+    <div class="pt-6 pb-6 flex items-center transition-all duration-200"
         :class="(!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen) ? 'xl:justify-center' : 'justify-start'">
 
-        <div class="flex items-center justify-center">
+        <!-- Expanded Sidebar Logo Area -->
+        <div x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
+            x-cloak
+            class="w-full flex items-center gap-4">
 
-            <!-- Full Logo (Expanded Sidebar) -->
-            <img x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
-                class="dark:hidden h-16 w-auto object-contain" src="{{ asset('img/logo_lms.png') }}" alt="Logo" />
+            <!-- Main LMS Logo Light Mode -->
+            <img class="dark:hidden h-16 w-auto object-contain shrink-0"
+                src="{{ asset('img/logo_lms.png') }}"
+                alt="Logo" />
 
-            <img x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
-                class="hidden dark:block h-16 w-auto object-contain" src="{{ asset('img/logo_lms.png') }}" alt="Logo" />
+            <!-- Main LMS Logo Dark Mode -->
+            <img class="hidden dark:block h-16 w-auto object-contain shrink-0"
+                src="{{ asset('img/logo_lms.png') }}"
+                alt="Logo" />
 
-            <!-- Small Icon (Collapsed Sidebar) -->
-            <img x-show="!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen"
-                class="h-8 w-auto object-contain" src="{{ asset('img/logo_lms.png') }}" alt="Logo" />
+            <!-- Hebrew Letters Image -->
+            <img class="h-9 w-auto object-contain shrink-0"
+                src="{{ asset('img/text.png') }}"
+                alt="י ה ו ה" />
 
+            {{-- 
+                If you do not want to use image and want text instead,
+                remove the image above and use this span:
+
+                <span class="text-2xl font-bold tracking-[0.35em] text-gray-800 dark:text-white"
+                    style="font-family: 'Times New Roman', serif;">
+                    י ה ו ה
+                </span>
+            --}}
+        </div>
+
+        <!-- Collapsed Sidebar Small Logo -->
+        <div x-show="!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen"
+            x-cloak
+            class="flex items-center justify-center w-full">
+            <img class="h-8 w-auto object-contain"
+                src="{{ asset('img/logo_lms.png') }}"
+                alt="Logo" />
         </div>
     </div>
+
     <!-- Navigation Menu -->
     <div class="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar space-y-4">
         <nav class="mb-6">
@@ -90,6 +117,7 @@ z-[60] border-r border-gray-200 shadow-md" x-data="{
                                 x-if="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen">
                                 <span class="font-semibold">{{ $menuGroup['title'] }}</span>
                             </template>
+
                             <template
                                 x-if="!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -122,6 +150,7 @@ z-[60] border-r border-gray-200 shadow-md" x-data="{
                                                 x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
                                                 class="menu-item-text flex items-center gap-2">
                                                 {{ $item['name'] }}
+
                                                 @if (!empty($item['new']))
                                                     <span
                                                         class="absolute right-10 text-xs px-2 py-0.5 rounded-full bg-red-500 text-white">
@@ -134,8 +163,8 @@ z-[60] border-r border-gray-200 shadow-md" x-data="{
                                             <svg x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
                                                 class="ml-auto w-5 h-5 transition-transform duration-200"
                                                 :class="{
-                                                                                                                                                                                                                                        'rotate-180 text-brand-500': isSubmenuOpen({{ $groupIndex }}, {{ $itemIndex }})
-                                                                                                                                                                                                                                    }"
+                                                    'rotate-180 text-brand-500': isSubmenuOpen({{ $groupIndex }}, {{ $itemIndex }})
+                                                }"
                                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M19 9l-7 7-7-7"></path>
@@ -152,12 +181,14 @@ z-[60] border-r border-gray-200 shadow-md" x-data="{
                                                             class="menu-dropdown-item text-sm py-1 px-3 flex items-center justify-between rounded-md transition-all hover:bg-gray-100 dark:hover:bg-gray-700"
                                                             :class="isActive('{{ $subItem['path'] }}') ? 'bg-gray-200 text-gray-800 dark:bg-gray-600' : 'text-gray-600 dark:text-gray-300'">
                                                             {{ $subItem['name'] }}
+
                                                             @if (!empty($subItem['new']))
                                                                 <span
                                                                     class="ml-auto text-xs px-2 py-0.5 rounded-full bg-red-500 text-white">
                                                                     new
                                                                 </span>
                                                             @endif
+
                                                             @if (!empty($subItem['pro']))
                                                                 <span
                                                                     class="ml-2 text-xs font-semibold text-white bg-blue-600 px-2 py-0.5 rounded">
@@ -185,6 +216,7 @@ z-[60] border-r border-gray-200 shadow-md" x-data="{
                                                 x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
                                                 class="menu-item-text flex items-center gap-2">
                                                 {{ $item['name'] }}
+
                                                 @if (!empty($item['new']))
                                                     <span
                                                         class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-500 text-white">
@@ -205,6 +237,7 @@ z-[60] border-r border-gray-200 shadow-md" x-data="{
 </aside>
 
 <!-- Mobile Overlay -->
-<div x-show="$store.sidebar.isMobileOpen" @click="$store.sidebar.setMobileOpen(false)"
+<div x-show="$store.sidebar.isMobileOpen"
+    @click="$store.sidebar.setMobileOpen(false)"
     class="fixed inset-0 z-50 bg-gray-900/50 xl:hidden">
 </div>

@@ -23,6 +23,11 @@
       transition: none !important;
       animation: none !important;
     }
+    h1{
+      font-size: 34px !important;
+      font-weight: 600;
+      color: #111827;
+    }
 
     /* Pre-apply sidebar padding BEFORE Alpine loads (prevents content jump) */
     @media (min-width: 1280px) {
