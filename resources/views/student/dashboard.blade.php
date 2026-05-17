@@ -187,24 +187,32 @@
             </section>
         @endif
 
-        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div>
-            <h2 class="text-xl font-semibold text-[#D4AF37] dark:text-[#D4AF37]">
-                University of Yahweh
-            </h2>     
-           <p class="text-sm text-gray-500 dark:text-white/60">
+                <h2 class="text-xl font-semibold text-[#D4AF37] dark:text-[#D4AF37]">
+                    University of Yahweh
+                </h2>
+
+                <p class="text-sm text-gray-500 dark:text-white/60">
                     Available divisions are unlocked based on your progress.
                 </p>
             </div>
 
-            <div class="w-full md:w-80 relative">
-                <input id="divisionSearch"
-                    class="w-full pl-10 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 text-gray-800 dark:text-white placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    placeholder="Search divisions...">
-                <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" viewBox="0 0 24 24" fill="none">
-                    <path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                    <path d="M11 19a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" stroke-width="2" />
-                </svg>
+            <div class="w-full md:w-80">
+                <h3 class="mb-2 text-base md:text-sm font-semibold text-black dark:text-white">
+                    Learning is Fun
+                </h3>
+
+                <div class="relative">
+                    <input id="divisionSearch"
+                        class="w-full pl-10 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 text-gray-800 dark:text-white placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        placeholder="Search divisions...">
+
+                    <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" viewBox="0 0 24 24" fill="none">
+                        <path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        <path d="M11 19a8 8 0 100-16 8 8 0 000 16z" stroke="currentColor" stroke-width="2" />
+                    </svg>
+                </div>
             </div>
         </div>
 
